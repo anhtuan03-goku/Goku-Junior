@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, BookmarkCheck, Users, Compass, Tag } from 'lucide-react';
+import { Layers, BookmarkCheck, Users, Compass, Tag, Star } from 'lucide-react';
 
 export default function Header({ totalPosts, savedCount, totalUsers }) {
   return (
@@ -25,14 +25,21 @@ export default function Header({ totalPosts, savedCount, totalUsers }) {
           Discover compelling stories, filter articles in real-time, and bookmark your favorite reads for quick access anytime.
         </p>
 
-        {/* Feature Branch 1: Trending Topics */}
-        <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-slate-400 flex items-center gap-1 font-medium">
-            <Tag className="w-3 h-3 text-indigo-400" /> Trending Topics:
-          </span>
-          <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">#Technology</span>
-          <span className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-300 border border-purple-500/20">#WebDesign</span>
-          <span className="px-2.5 py-1 rounded-lg bg-pink-500/10 text-pink-300 border border-pink-500/20">#Insights</span>
+        {/* Resolved Features: Combined Trending Topics (Feature 1) + Rating Metrics (Feature 2) */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-slate-400 flex items-center gap-1 font-medium">
+              <Tag className="w-3 h-3 text-indigo-400" /> Trending Topics:
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">#Technology</span>
+            <span className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-300 border border-purple-500/20">#WebDesign</span>
+            <span className="px-2.5 py-1 rounded-lg bg-pink-500/10 text-pink-300 border border-pink-500/20">#Insights</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold">
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span>Rating: 4.9/5 (1,250+ Reviews)</span>
+          </div>
         </div>
 
         {/* Stats Row */}
