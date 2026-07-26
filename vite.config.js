@@ -5,5 +5,5 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: './', // Ensure relative asset paths for GitHub Pages deployment
+  base: '/Goku-Junior/', // Explicit base path matching GitHub repository name
 })
