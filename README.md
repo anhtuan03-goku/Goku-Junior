@@ -59,11 +59,11 @@ Mô phỏng quy trình làm việc thực tế với 2 nhánh tính năng (featu
 
 ### 🔷 3.2. Extra Exercise: Thực Hành Tạo PR Thủ Công Trên Giao Diện Web & Deploy GitHub Pages
 
-Nhánh `feature/github-pages-deploy` đã được **Publish (Push)** sẵn lên GitHub Remote. Bạn hãy tự tạo và duyệt PR thủ công trên trình duyệt web theo các bước dưới đây:
+Nhánh `feature/github-pages-deploy` đã được **Publish (Push)**
+Tạo và duyệt PR thủ công trên trình duyệt web theo các bước dưới đây:
 
 #### 🌐 Bước 1: Tạo Pull Request Thủ Công Trên Web GitHub
-1. Truy cập trực tiếp liên kết tạo PR:
-   👉 **[Tạo PR Mới Trên GitHub Web](https://github.com/anhtuan03-goku/DEV-002-Git-Flow/pull/new/feature/github-pages-deploy)**
+1. Tạo PR
 2. Kiểm tra cấu hình gộp nhánh:
    - **base: `main`** ⬅ **compare: `feature/github-pages-deploy`**
 3. Điền tiêu đề và mô tả PR:
@@ -82,7 +82,7 @@ Nhánh `feature/github-pages-deploy` đã được **Publish (Push)** sẵn lên
    - Source: Chọn **GitHub Actions**.
 3. Đợi khoảng 1-2 phút để GitHub Actions chạy tự động công việc deploy.
 4. Truy cập trang web đã được xuất bản công khai tại địa chỉ:
-   👉 **`https://anhtuan03-goku.github.io/DEV-002-Git-Flow/`**
+   👉 **`https://anhtuan03-goku.github.io/Goku-Junior/`**
 
 ---
 
