@@ -149,7 +149,6 @@ npm run dev
 
 # Đóng gói sản phẩm
 npm run build
-
+```
 #GitHub Pages
 *https://anhtuan03-goku.github.io/Goku-Junior/*
-```
