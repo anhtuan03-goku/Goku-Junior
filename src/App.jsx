@@ -18,6 +18,8 @@ export default function App() {
   // LocalStorage state persistence
   const [savedPosts, setSavedPosts] = useLocalStorage('pulse_blog_saved_posts', []);
   const [customPosts, setCustomPosts] = useLocalStorage('pulse_blog_custom_posts', []);
+  // Mentor Feedback Fix: Persist theme preference in localStorage
+  const [isDarkMode, setIsDarkMode] = useLocalStorage('pulse_blog_dark_mode', true);
 
   // UI control states
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'saved'
@@ -98,8 +100,12 @@ export default function App() {
     return savedPosts.some((p) => p.id === postId);
   };
 
+  const handleToggleTheme = () => {
+    setIsDarkMode((prev) => !prev);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-900 text-slate-100'} flex flex-col font-sans selection:bg-indigo-500 selection:text-white transition-colors duration-300`}>
       
       {/* Top Navigation */}
       <Navbar
@@ -109,6 +115,8 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         savedCount={savedPosts.length}
         onOpenCreateModal={() => setIsCreateModalOpen(true)}
+        isDarkMode={isDarkMode}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Main Container */}

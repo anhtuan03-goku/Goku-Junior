@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Bookmark, PlusCircle, Search, Sparkles } from 'lucide-react';
+import { BookOpen, Bookmark, PlusCircle, Search, Sparkles, Moon, Sun } from 'lucide-react';
 
 export default function Navbar({ 
   activeTab, 
@@ -7,7 +7,9 @@ export default function Navbar({
   searchQuery, 
   setSearchQuery, 
   savedCount, 
-  onOpenCreateModal 
+  onOpenCreateModal,
+  isDarkMode,
+  onToggleTheme
 }) {
   return (
     <header className="sticky top-0 z-40 glass-nav transition-all" aria-label="Main Navigation">
@@ -45,6 +47,16 @@ export default function Navbar({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Theme Toggle Button - Enhanced with Mentor Feedback Fixes (aria-label & tooltip) */}
+          <button
+            onClick={onToggleTheme}
+            aria-label="Toggle color theme"
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+          </button>
+
           {/* Tab Filter: All Posts */}
           <button
             id="tab-all-posts-btn"
@@ -87,22 +99,6 @@ export default function Navbar({
             <PlusCircle className="w-4 h-4" />
             <span className="hidden sm:inline">New Article</span>
           </button>
-        </div>
-      </div>
-
-      {/* Mobile Search Bar */}
-      <div className="px-4 pb-3 md:hidden">
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            id="mobile-search-input"
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search articles..."
-            aria-label="Search articles mobile"
-            className="w-full pl-10 pr-4 py-2 bg-slate-800/60 text-slate-100 placeholder-slate-400 text-sm rounded-xl border border-slate-700/60 focus:outline-none focus:border-indigo-500"
-          />
         </div>
       </div>
     </header>
