@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, BookmarkCheck, Users, Compass } from 'lucide-react';
+import { Layers, BookmarkCheck, Users, Compass, Star } from 'lucide-react';
 
 export default function Header({ totalPosts, savedCount, totalUsers }) {
   return (
@@ -24,6 +24,14 @@ export default function Header({ totalPosts, savedCount, totalUsers }) {
         <p className="text-slate-400 text-base sm:text-lg mb-8 leading-relaxed">
           Discover compelling stories, filter articles in real-time, and bookmark your favorite reads for quick access anytime.
         </p>
+
+        {/* Feature Branch 2: Community Rating Metrics */}
+        <div className="mb-6 flex items-center gap-2 text-xs">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold">
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span>Community Rating: 4.9/5 (1,250+ Reader Reviews)</span>
+          </div>
+        </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-800/80">
