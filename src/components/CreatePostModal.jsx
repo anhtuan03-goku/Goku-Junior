@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, PlusCircle, PenTool, CheckCircle2 } from 'lucide-react';
 
-export default function CreatePostModal({ isOpen, onClose, onCreatePost }) {
+export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkMode }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [authorName, setAuthorName] = useState('');
@@ -42,21 +42,43 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md" role="dialog" aria-modal="true">
-      <div className="relative w-full max-w-lg bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md ${
+        isDarkMode ? 'bg-slate-950/85' : 'bg-slate-900/60'
+      }`} 
+      role="dialog" 
+      aria-modal="true"
+    >
+      <div className={`relative w-full max-w-lg rounded-3xl border shadow-2xl overflow-hidden ${
+        isDarkMode 
+          ? 'bg-slate-900 border-slate-800 text-slate-100' 
+          : 'bg-white border-slate-200 text-slate-900'
+      }`}>
         
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div className={`p-6 border-b flex items-center justify-between ${
+          isDarkMode 
+            ? 'border-slate-800 bg-slate-900/90' 
+            : 'border-slate-200 bg-white'
+        }`}>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              isDarkMode ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-700'
+            }`}>
               <PenTool className="w-4 h-4" />
             </div>
-            <h3 className="text-lg font-bold text-white">Create New Article</h3>
+            <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              Create New Article
+            </h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className={`p-1.5 rounded-xl transition-colors ${
+              isDarkMode 
+                ? 'text-slate-400 hover:text-white hover:bg-slate-800' 
+                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -65,20 +87,22 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost }) {
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 text-xs rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">
+            <div className="p-3 text-xs rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 font-medium">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="p-3 text-xs rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-2">
+            <div className="p-3 text-xs rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-2 font-medium">
               <CheckCircle2 className="w-4 h-4" />
               Article created and saved successfully!
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className={`block text-xs font-semibold mb-1.5 ${
+              isDarkMode ? 'text-slate-300' : 'text-slate-700'
+            }`}>
               Author Name (Optional)
             </label>
             <input
@@ -86,12 +110,18 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost }) {
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
               placeholder="e.g. Alex Morgan"
-              className="w-full px-4 py-2.5 bg-slate-800/80 text-white placeholder-slate-500 text-sm rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500"
+              className={`w-full px-4 py-2.5 text-sm rounded-xl border transition-all ${
+                isDarkMode 
+                  ? 'bg-slate-800/80 text-white placeholder-slate-500 border-slate-700 focus:border-indigo-500' 
+                  : 'bg-slate-50 text-slate-900 placeholder-slate-400 border-slate-300 focus:border-indigo-600 focus:bg-white'
+              }`}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className={`block text-xs font-semibold mb-1.5 ${
+              isDarkMode ? 'text-slate-300' : 'text-slate-700'
+            }`}>
               Article Title <span className="text-pink-500">*</span>
             </label>
             <input
@@ -99,12 +129,18 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter a compelling article headline..."
-              className="w-full px-4 py-2.5 bg-slate-800/80 text-white placeholder-slate-500 text-sm rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500"
+              className={`w-full px-4 py-2.5 text-sm rounded-xl border transition-all ${
+                isDarkMode 
+                  ? 'bg-slate-800/80 text-white placeholder-slate-500 border-slate-700 focus:border-indigo-500' 
+                  : 'bg-slate-50 text-slate-900 placeholder-slate-400 border-slate-300 focus:border-indigo-600 focus:bg-white'
+              }`}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className={`block text-xs font-semibold mb-1.5 ${
+              isDarkMode ? 'text-slate-300' : 'text-slate-700'
+            }`}>
               Article Body <span className="text-pink-500">*</span>
             </label>
             <textarea
@@ -112,21 +148,31 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost }) {
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write your article content here..."
-              className="w-full px-4 py-2.5 bg-slate-800/80 text-white placeholder-slate-500 text-sm rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500 resize-none"
+              className={`w-full px-4 py-2.5 text-sm rounded-xl border resize-none transition-all ${
+                isDarkMode 
+                  ? 'bg-slate-800/80 text-white placeholder-slate-500 border-slate-700 focus:border-indigo-500' 
+                  : 'bg-slate-50 text-slate-900 placeholder-slate-400 border-slate-300 focus:border-indigo-600 focus:bg-white'
+              }`}
             />
           </div>
 
-          <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
+          <div className={`pt-4 border-t flex justify-end gap-3 ${
+            isDarkMode ? 'border-slate-800' : 'border-slate-200'
+          }`}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+              className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${
+                isDarkMode 
+                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-95 shadow-lg shadow-indigo-500/25 transition-all"
+              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-95 shadow-lg shadow-indigo-500/25 transition-all"
             >
               <PlusCircle className="w-4 h-4" />
               Publish Article
