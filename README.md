@@ -9,7 +9,7 @@ Tài liệu thực hành và hoàn thành các bài tập thuộc Chương **DEV
 - Tạo 1 repo cá nhân tại `E:\daotaoGOKU`.
 - Thực hiện ≥ 5 commit với message rõ ràng tuân thủ quy chuẩn **Conventional Commits**.
 - Đảm bảo lịch sử commit sạch, mỗi commit giải quyết duy nhất 1 nhiệm vụ.
-- Đã liên kết và push thành công lên GitHub remote `https://github.com/anhtuan03-goku/DEV-002-Git-Flow.git`.
+- Đã liên kết và push thành công lên GitHub remote `https://github.com/anhtuan03-goku/Goku-Junior.git`.
 
 ---
 
