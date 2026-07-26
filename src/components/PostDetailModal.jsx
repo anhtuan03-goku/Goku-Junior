@@ -35,14 +35,14 @@ export default function PostDetailModal({ post, onClose, isSaved, onToggleSave }
   if (!post) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto" role="dialog" aria-modal="true">
       <div className="relative w-full max-w-2xl bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 sticky top-0 z-10 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              Chi tiết bài viết #{post.id}
+              Article #{post.id}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -57,17 +57,18 @@ export default function PostDetailModal({ post, onClose, isSaved, onToggleSave }
               {isSaved ? (
                 <>
                   <BookmarkCheck className="w-4 h-4 fill-purple-400" />
-                  <span>Đã lưu</span>
+                  <span>Saved</span>
                 </>
               ) : (
                 <>
                   <Bookmark className="w-4 h-4" />
-                  <span>Lưu bài</span>
+                  <span>Save Article</span>
                 </>
               )}
             </button>
             <button
               onClick={onClose}
+              aria-label="Close modal"
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <X className="w-5 h-5" />
@@ -75,7 +76,7 @@ export default function PostDetailModal({ post, onClose, isSaved, onToggleSave }
           </div>
         </div>
 
-        {/* Modal Body Scrollable */}
+        {/* Modal Body */}
         <div className="p-6 sm:p-8 overflow-y-auto space-y-6">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight capitalize">
             {post.title}
@@ -83,10 +84,10 @@ export default function PostDetailModal({ post, onClose, isSaved, onToggleSave }
 
           <div className="flex items-center gap-4 text-xs text-slate-400 border-b border-slate-800 pb-4">
             <span className="flex items-center gap-1.5 font-medium text-slate-300">
-              <User className="w-3.5 h-3.5 text-indigo-400" /> {post.authorName || `Tác giả ${post.userId || 1}`}
+              <User className="w-3.5 h-3.5 text-indigo-400" /> {post.authorName || `Author ${post.userId || 1}`}
             </span>
             <span className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-slate-500" /> 26 Tháng 7, 2026
+              <Calendar className="w-3.5 h-3.5 text-slate-500" /> Published Article
             </span>
           </div>
 
@@ -96,18 +97,18 @@ export default function PostDetailModal({ post, onClose, isSaved, onToggleSave }
 
           {/* Comments Section */}
           <div className="pt-6 border-t border-slate-800">
-            <h4 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-indigo-400" />
-              <span>Bình luận ({comments.length})</span>
-            </h4>
+              <span>Discussion ({comments.length})</span>
+            </h3>
 
             {loadingComments ? (
               <div className="flex items-center justify-center py-6 text-sm text-slate-400">
-                Đang tải bình luận...
+                Loading discussion...
               </div>
             ) : comments.length === 0 ? (
               <div className="text-center py-6 text-sm text-slate-500 italic">
-                Chưa có bình luận nào cho bài viết này.
+                No discussion comments found for this article.
               </div>
             ) : (
               <div className="space-y-3">
@@ -133,7 +134,7 @@ export default function PostDetailModal({ post, onClose, isSaved, onToggleSave }
             onClick={onClose}
             className="px-5 py-2 text-sm font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
           >
-            Đóng
+            Close
           </button>
         </div>
       </div>

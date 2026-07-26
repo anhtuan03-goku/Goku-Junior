@@ -16,8 +16,8 @@ export default function App() {
   const [error, setError] = useState(null);
 
   // LocalStorage state persistence
-  const [savedPosts, setSavedPosts] = useLocalStorage('goku_blog_saved_posts', []);
-  const [customPosts, setCustomPosts] = useLocalStorage('goku_blog_custom_posts', []);
+  const [savedPosts, setSavedPosts] = useLocalStorage('pulse_blog_saved_posts', []);
+  const [customPosts, setCustomPosts] = useLocalStorage('pulse_blog_custom_posts', []);
 
   // UI control states
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'saved'
@@ -34,7 +34,7 @@ export default function App() {
       setApiPosts(postsData);
       setUsers(usersData);
     } catch (err) {
-      setError('Không thể nạp dữ liệu bài viết từ API. Vui lòng thử lại!');
+      setError('Unable to load articles from the API. Please try again!');
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ export default function App() {
   const allPosts = useMemo(() => {
     const enrichedApiPosts = apiPosts.map((post) => ({
       ...post,
-      authorName: userMap[post.userId] || `Tác giả ${post.userId}`
+      authorName: userMap[post.userId] || `Author ${post.userId}`
     }));
     return [...customPosts, ...enrichedApiPosts];
   }, [apiPosts, customPosts, userMap]);
@@ -101,7 +101,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       
-      {/* Top Navbar */}
+      {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -128,18 +128,18 @@ export default function App() {
               {activeTab === 'saved' ? (
                 <>
                   <Bookmark className="w-6 h-6 text-purple-400" />
-                  <span>Bài viết đã lưu ({filteredPosts.length})</span>
+                  <span>Saved Articles ({filteredPosts.length})</span>
                 </>
               ) : (
                 <>
                   <FileText className="w-6 h-6 text-indigo-400" />
-                  <span>Danh sách bài viết mới nhất ({filteredPosts.length})</span>
+                  <span>Latest Articles ({filteredPosts.length})</span>
                 </>
               )}
             </h2>
             {searchQuery && (
               <p className="text-xs text-slate-400 mt-1">
-                Kết quả tìm kiếm cho từ khóa: <span className="text-indigo-400 font-semibold font-mono">"{searchQuery}"</span>
+                Search results for keyword: <span className="text-indigo-400 font-semibold font-mono">"{searchQuery}"</span>
               </p>
             )}
           </div>
@@ -149,7 +149,7 @@ export default function App() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
-            <p className="text-slate-400 text-sm font-medium">Đang tải danh sách bài viết từ API...</p>
+            <p className="text-slate-400 text-sm font-medium">Fetching articles...</p>
           </div>
         )}
 
@@ -157,13 +157,13 @@ export default function App() {
         {error && !loading && (
           <div className="flex flex-col items-center justify-center py-16 p-6 rounded-2xl glass-card text-center max-w-md mx-auto">
             <AlertCircle className="w-12 h-12 text-red-400 mb-3" />
-            <h3 className="text-lg font-bold text-white mb-2">Đã xảy ra lỗi</h3>
+            <h3 className="text-lg font-bold text-white mb-2">Error Loading Articles</h3>
             <p className="text-slate-400 text-sm mb-6">{error}</p>
             <button
               onClick={loadApiData}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all"
             >
-              <RefreshCw className="w-4 h-4" /> Thử lại
+              <RefreshCw className="w-4 h-4" /> Retry
             </button>
           </div>
         )}
@@ -172,18 +172,18 @@ export default function App() {
         {!loading && !error && filteredPosts.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 p-8 rounded-2xl glass-card text-center max-w-md mx-auto">
             <Bookmark className="w-12 h-12 text-slate-600 mb-3" />
-            <h3 className="text-lg font-bold text-white mb-2">Không tìm thấy bài viết nào</h3>
+            <h3 className="text-lg font-bold text-white mb-2">No Articles Found</h3>
             <p className="text-slate-400 text-sm mb-6">
               {activeTab === 'saved'
-                ? 'Bạn chưa lưu bài viết nào vào LocalStorage. Hãy nhấp vào biểu tượng Bookmark ở bài viết bất kỳ để lưu!'
-                : 'Không có bài viết nào khớp với từ khóa tìm kiếm của bạn.'}
+                ? 'You have not bookmarked any articles yet. Click the bookmark icon on any article to save it!'
+                : 'No articles matched your search query.'}
             </p>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
               >
-                Xóa từ khóa tìm kiếm
+                Clear Search Filter
               </button>
             )}
           </div>
@@ -208,8 +208,7 @@ export default function App() {
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950/80 py-8 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
-          <p>© 2026 GokuBlog — Bài tập 1: React.js, Tailwind CSS & LocalStorage.</p>
-          <p className="mt-1">Dữ liệu bài viết cung cấp bởi JSONPlaceholder REST API.</p>
+          <p>© 2026 PulseBlog — Curated Articles & Insights.</p>
         </div>
       </footer>
 
