@@ -47,9 +47,11 @@ export default function Navbar({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Theme Toggle Button */}
+          {/* Theme Toggle Button - Enhanced with Mentor Feedback Fixes (aria-label & tooltip) */}
           <button
             onClick={onToggleTheme}
+            aria-label="Toggle color theme"
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
