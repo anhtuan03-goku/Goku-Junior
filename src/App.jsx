@@ -104,7 +104,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 flex flex-col font-sans selection:bg-indigo-500 selection:text-white ${
+    <div className={`min-h-screen transition-colors duration-700 ease-in-out flex flex-col font-sans selection:bg-indigo-500 selection:text-white ${
       isDarkMode 
         ? 'bg-[#090d16] text-slate-100' 
         : 'bg-[#f8fafc] text-slate-900'
@@ -136,7 +136,7 @@ export default function App() {
         {/* Section Heading & Filter Status */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className={`text-2xl font-extrabold tracking-tight flex items-center gap-2 ${
+            <h2 className={`text-2xl font-extrabold tracking-tight flex items-center gap-2 transition-colors duration-700 ${
               isDarkMode ? 'text-white' : 'text-slate-900'
             }`}>
               {activeTab === 'saved' ? (
@@ -152,7 +152,7 @@ export default function App() {
               )}
             </h2>
             {searchQuery && (
-              <p className={`text-xs mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              <p className={`text-xs mt-1 transition-colors duration-700 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 Search results for keyword: <span className="text-indigo-600 dark:text-indigo-400 font-semibold font-mono">"{searchQuery}"</span>
               </p>
             )}
@@ -163,7 +163,7 @@ export default function App() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-indigo-600 dark:text-indigo-400 animate-spin mb-4" />
-            <p className={`text-sm font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`text-sm font-semibold transition-colors duration-700 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               Fetching articles...
             </p>
           </div>
@@ -175,13 +175,13 @@ export default function App() {
             isDarkMode ? 'glass-card-dark' : 'glass-card-light'
           }`}>
             <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
-            <h3 className={`text-lg font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+            <h3 className={`text-lg font-bold mb-2 transition-colors duration-700 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
               Error Loading Articles
             </h3>
-            <p className={`text-sm mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{error}</p>
+            <p className={`text-sm mb-6 transition-colors duration-700 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{error}</p>
             <button
               onClick={loadApiData}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-md cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" /> Retry
             </button>
@@ -193,11 +193,11 @@ export default function App() {
           <div className={`flex flex-col items-center justify-center py-16 p-8 rounded-2xl text-center max-w-md mx-auto ${
             isDarkMode ? 'glass-card-dark' : 'glass-card-light'
           }`}>
-            <Bookmark className={`w-12 h-12 mb-3 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`} />
-            <h3 className={`text-lg font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+            <Bookmark className={`w-12 h-12 mb-3 transition-colors duration-700 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`} />
+            <h3 className={`text-lg font-bold mb-2 transition-colors duration-700 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
               No Articles Found
             </h3>
-            <p className={`text-sm mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`text-sm mb-6 transition-colors duration-700 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               {activeTab === 'saved'
                 ? 'You have not bookmarked any articles yet. Click the bookmark icon on any article to save it!'
                 : 'No articles matched your search query.'}
@@ -205,7 +205,7 @@ export default function App() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold ${
+                className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors duration-700 ${
                   isDarkMode 
                     ? 'bg-slate-800 text-slate-300 hover:text-white' 
                     : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
@@ -235,7 +235,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className={`border-t py-8 text-center text-xs transition-colors ${
+      <footer className={`border-t py-8 text-center text-xs transition-colors duration-700 ${
         isDarkMode 
           ? 'border-slate-900 bg-slate-950/90 text-slate-500' 
           : 'border-slate-200 bg-slate-100 text-slate-600'

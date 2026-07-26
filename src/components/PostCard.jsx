@@ -18,7 +18,7 @@ export default function PostCard({ post, isSaved, onToggleSave, onSelectPost, is
 
   return (
     <article 
-      className={`group relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1 ${
+      className={`group relative rounded-2xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1 ${
         isDarkMode 
           ? 'glass-card-dark hover:border-indigo-500/50 hover:shadow-indigo-500/20' 
           : 'glass-card-light hover:border-indigo-400 hover:shadow-indigo-500/15'
@@ -44,10 +44,11 @@ export default function PostCard({ post, isSaved, onToggleSave, onSelectPost, is
           </div>
 
           <button
+            type="button"
             onClick={() => onToggleSave(post)}
             aria-label={isSaved ? 'Unsave article' : 'Save article'}
             title={isSaved ? 'Unsave article' : 'Save article'}
-            className={`p-2 rounded-xl transition-all ${
+            className={`p-2 rounded-xl transition-all cursor-pointer ${
               isSaved
                 ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/40 hover:bg-purple-500/30'
                 : isDarkMode
@@ -59,17 +60,17 @@ export default function PostCard({ post, isSaved, onToggleSave, onSelectPost, is
           </button>
         </div>
 
-        {/* Title */}
-        <h2 
+        {/* Title Heading H3 for Semantic Structure */}
+        <h3 
           onClick={() => onSelectPost(post)}
-          className={`text-lg font-bold transition-colors line-clamp-2 mb-3 cursor-pointer ${
+          className={`text-base sm:text-lg font-bold transition-colors line-clamp-2 mb-3 cursor-pointer ${
             isDarkMode 
               ? 'text-white group-hover:text-indigo-400' 
               : 'text-slate-900 group-hover:text-indigo-600'
           }`}
         >
           {formattedTitle}
-        </h2>
+        </h3>
 
         {/* Excerpt Body */}
         <p className={`text-sm line-clamp-3 mb-6 leading-relaxed ${
@@ -83,7 +84,7 @@ export default function PostCard({ post, isSaved, onToggleSave, onSelectPost, is
       <div className={`pt-4 flex items-center justify-between mt-auto border-t ${
         isDarkMode ? 'border-slate-800/80' : 'border-slate-200'
       }`}>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => onSelectPost(post)}>
           <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${gradientClass} flex items-center justify-center font-bold text-white text-xs shadow-md`}>
             {post.authorName ? post.authorName.charAt(0) : `A`}
           </div>
@@ -95,8 +96,9 @@ export default function PostCard({ post, isSaved, onToggleSave, onSelectPost, is
         </div>
 
         <button
+          type="button"
           onClick={() => onSelectPost(post)}
-          className={`inline-flex items-center gap-1 text-xs font-bold transition-colors ${
+          className={`inline-flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer ${
             isDarkMode 
               ? 'text-indigo-400 hover:text-indigo-300' 
               : 'text-indigo-600 hover:text-indigo-800'

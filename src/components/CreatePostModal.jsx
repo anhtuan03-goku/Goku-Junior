@@ -72,9 +72,10 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className={`p-1.5 rounded-xl transition-colors ${
+            className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
               isDarkMode 
                 ? 'text-slate-400 hover:text-white hover:bg-slate-800' 
                 : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
@@ -162,7 +163,7 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
             <button
               type="button"
               onClick={onClose}
-              className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${
+              className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors cursor-pointer ${
                 isDarkMode 
                   ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -172,7 +173,7 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-95 shadow-lg shadow-indigo-500/25 transition-all"
+              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-95 shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               Publish Article
