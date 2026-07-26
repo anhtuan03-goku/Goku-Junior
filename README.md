@@ -1,4 +1,10 @@
-# Bài Tập 1
+# PulseBlog - Modern Knowledge & Insights Hub
+
+A modern web application built with clean semantic structure, English UI, SEO optimization, and browser state persistence.
+
+---
+
+## 📌 Bài Tập 1
 
 - Tạo 1 repo cá nhân.
 - Thực hiện ≥ 5 commit với message rõ ràng.
@@ -7,20 +13,49 @@
 
 ---
 
-## 🚀 React.js Blog App + Tailwind CSS & LocalStorage
+## 📌 Bài Tập 2: Quy Trình Giả Lập Conflict & Tự Xử Lý Conflict
 
-Ứng dụng Web Blog cá nhân kết nối RESTful API từ `https://jsonplaceholder.typicode.com/posts` và quản lý bài viết trên LocalStorage.
+Mô phỏng quy trình làm việc thực tế với 2 nhánh tính năng (feature branches) cùng chỉnh sửa một tệp tin, chủ động xử lý xung đột (Merge Conflict) để giữ nguyên toàn bộ mã nguồn mà không làm mất bất kỳ tính năng nào.
 
-### 📜 Lịch Sử Commit (`git log`)
+### 📋 Các Bước Đã Thực Hiện:
 
-- `chore: initialize React project with Vite, Tailwind CSS, and Git configuration`
-- `feat: add API service layer for JSONPlaceholder posts`
-- `feat: build modern UI layout, PostCard, and Search components`
-- `feat: implement localStorage bookmarking and custom post creation`
-- `docs: complete README.md documentation for assignment 1`
+1. **Khởi tạo Nhánh Tính Năng 1 (`feature/trending-badge`)**:
+   - Lệnh: `git checkout -b feature/trending-badge`
+   - Sửa tệp `src/components/Header.jsx`: Bổ sung danh mục các thẻ Trending topics (`#Technology`, `#WebDesign`, `#Insights`).
+   - Commit: `feat: add trending category badges to Header component`
 
-### 🛠️ Hướng Dẫn Chạy Cục Bộ
+2. **Khởi tạo Nhánh Tính Năng 2 (`feature/rating-metrics`) từ `main`**:
+   - Lệnh: `git checkout main && git checkout -b feature/rating-metrics`
+   - Sửa cùng tệp `src/components/Header.jsx`: Bổ sung thông số Đánh giá cộng đồng (`Rating: 4.9/5`).
+   - Commit: `feat: add community rating metrics to Header component`
+
+3. **Gộp Nhánh 1 vào `main`**:
+   - Lệnh: `git checkout main && git merge feature/trending-badge`
+   - Kết quả: Fast-forward merge thành công.
+
+4. **Gộp Nhánh 2 vào `main` (Phát sinh Xung đột - Conflict)**:
+   - Lệnh: `git merge feature/rating-metrics`
+   - Kết quả: `CONFLICT (content): Merge conflict in src/components/Header.jsx`.
+
+5. **Giải Quyết Conflict Trực Tiếp & Đảm Bảo Không Mất Code**:
+   - Mở tệp `src/components/Header.jsx` và chủ động kết hợp cả 2 khối mã nguồn của Nhánh 1 (Trending Topics) và Nhánh 2 (Rating Metrics).
+   - Lệnh lưu kết quả: `git add src/components/Header.jsx`
+   - Lệnh commit hoàn tất gộp: `git commit -m "fix: resolve merge conflict between feature/trending-badge and feature/rating-metrics"`
+
+6. **Đẩy Toàn Bộ Lịch Sử Lên Remote**:
+   - Lệnh: `git push -u origin main`
+
+---
+
+## 🛠️ Local Development
+
 ```bash
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
+
+# Production build
+npm run build
 ```
