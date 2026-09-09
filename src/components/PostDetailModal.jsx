@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { X, MessageSquare, Bookmark, BookmarkCheck, User, Calendar } from 'lucide-react';
+import { X, MessageSquare, Bookmark, BookmarkCheck, User, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { fetchPostComments } from '../services/api';
 
-export default function PostDetailModal({ post, onClose, isSaved, onToggleSave, isDarkMode }) {
+export default function PostDetailModal({ 
+  post, 
+  onClose, 
+  isSaved, 
+  onToggleSave, 
+  onEditPost, 
+  onDeletePost, 
+  isDarkMode 
+}) {
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(true);
 
@@ -64,6 +72,40 @@ export default function PostDetailModal({ post, onClose, isSaved, onToggleSave, 
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {onEditPost && (
+              <button
+                type="button"
+                onClick={() => onEditPost(post)}
+                aria-label="Edit article"
+                title="Edit article"
+                className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-slate-800 text-slate-300 hover:text-amber-400 hover:bg-slate-700'
+                    : 'bg-slate-100 text-slate-700 hover:text-amber-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+              >
+                <Pencil className="w-4 h-4" />
+                <span className="hidden sm:inline">Edit</span>
+              </button>
+            )}
+
+            {onDeletePost && (
+              <button
+                type="button"
+                onClick={() => onDeletePost(post.id)}
+                aria-label="Delete article"
+                title="Delete article"
+                className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-slate-800 text-slate-300 hover:text-red-400 hover:bg-slate-700'
+                    : 'bg-slate-100 text-slate-700 hover:text-red-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Delete</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => onToggleSave(post)}

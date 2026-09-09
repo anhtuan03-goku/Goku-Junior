@@ -18,6 +18,7 @@ export default function App() {
   // LocalStorage state persistence
   const [savedPosts, setSavedPosts] = useLocalStorage('pulse_blog_saved_posts', []);
   const [customPosts, setCustomPosts] = useLocalStorage('pulse_blog_custom_posts', []);
+  const [deletedPostIds, setDeletedPostIds] = useLocalStorage('pulse_blog_deleted_posts', []);
   const [isDarkMode, setIsDarkMode] = useLocalStorage('pulse_blog_dark_mode', true);
 
   // UI control states
@@ -25,6 +26,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPost, setSelectedPost] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
 
   // Load data from API
   const loadApiData = async () => {
@@ -34,7 +36,7 @@ export default function App() {
       const [postsData, usersData] = await Promise.all([fetchPosts(), fetchUsers()]);
       setApiPosts(postsData);
       setUsers(usersData);
-    } catch (err) {
+    } catch {
       setError('Unable to load articles from the API. Please try again!');
     } finally {
       setLoading(false);
@@ -54,14 +56,17 @@ export default function App() {
     return map;
   }, [users]);
 
-  // Combine custom posts created by user with API posts
+  // Combine custom posts created by user with API posts (excluding deleted posts)
   const allPosts = useMemo(() => {
-    const enrichedApiPosts = apiPosts.map((post) => ({
-      ...post,
-      authorName: userMap[post.userId] || `Author ${post.userId}`
-    }));
-    return [...customPosts, ...enrichedApiPosts];
-  }, [apiPosts, customPosts, userMap]);
+    const enrichedApiPosts = apiPosts
+      .filter((post) => !deletedPostIds.includes(post.id))
+      .map((post) => ({
+        ...post,
+        authorName: userMap[post.userId] || `Author ${post.userId}`
+      }));
+    const activeCustomPosts = customPosts.filter((post) => !deletedPostIds.includes(post.id));
+    return [...activeCustomPosts, ...enrichedApiPosts];
+  }, [apiPosts, customPosts, userMap, deletedPostIds]);
 
   // Filter posts based on active tab and search query
   const filteredPosts = useMemo(() => {
@@ -78,7 +83,7 @@ export default function App() {
     );
   }, [allPosts, savedPosts, activeTab, searchQuery]);
 
-  // Toggle bookmark / saved post in localStorage
+  // Toggle bookmark / saved post in localStorage (Immutable add/remove)
   const handleToggleSave = (postToToggle) => {
     setSavedPosts((prevSaved) => {
       const isAlreadySaved = prevSaved.some((p) => p.id === postToToggle.id);
@@ -90,9 +95,42 @@ export default function App() {
     });
   };
 
-  // Add custom post to localStorage
+  // Add custom post to state (Immutable add)
   const handleCreatePost = (newPost) => {
     setCustomPosts((prev) => [newPost, ...prev]);
+  };
+
+  // Update existing post (Immutable update with map)
+  const handleUpdatePost = (updatedPost) => {
+    setCustomPosts((prev) =>
+      prev.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost } : p))
+    );
+    setSavedPosts((prev) =>
+      prev.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost } : p))
+    );
+    setApiPosts((prev) =>
+      prev.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost } : p))
+    );
+    if (selectedPost && selectedPost.id === updatedPost.id) {
+      setSelectedPost((prev) => ({ ...prev, ...updatedPost }));
+    }
+  };
+
+  // Delete post (Immutable delete with filter)
+  const handleDeletePost = (postId) => {
+    if (window.confirm('Are you sure you want to delete this article?')) {
+      setCustomPosts((prev) => prev.filter((p) => p.id !== postId));
+      setSavedPosts((prev) => prev.filter((p) => p.id !== postId));
+      setDeletedPostIds((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost(null);
+      }
+    }
+  };
+
+  const handleOpenEditModal = (post) => {
+    setEditingPost(post);
+    setIsCreateModalOpen(true);
   };
 
   const isPostSaved = (postId) => {
@@ -227,6 +265,8 @@ export default function App() {
                 isSaved={isPostSaved(post.id)}
                 onToggleSave={handleToggleSave}
                 onSelectPost={(p) => setSelectedPost(p)}
+                onEditPost={handleOpenEditModal}
+                onDeletePost={handleDeletePost}
                 isDarkMode={isDarkMode}
               />
             ))}
@@ -252,15 +292,22 @@ export default function App() {
           onClose={() => setSelectedPost(null)}
           isSaved={isPostSaved(selectedPost.id)}
           onToggleSave={handleToggleSave}
+          onEditPost={handleOpenEditModal}
+          onDeletePost={handleDeletePost}
           isDarkMode={isDarkMode}
         />
       )}
 
-      {/* Create Custom Post Modal */}
+      {/* Create / Edit Custom Post Modal */}
       <CreatePostModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingPost(null);
+        }}
         onCreatePost={handleCreatePost}
+        onUpdatePost={handleUpdatePost}
+        editingPost={editingPost}
         isDarkMode={isDarkMode}
       />
     </div>

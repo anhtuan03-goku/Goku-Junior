@@ -1,12 +1,36 @@
-import React, { useState } from 'react';
-import { X, PlusCircle, PenTool, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, PlusCircle, PenTool, CheckCircle2, Save } from 'lucide-react';
 
-export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkMode }) {
+export default function CreatePostModal({ 
+  isOpen, 
+  onClose, 
+  onCreatePost, 
+  onUpdatePost, 
+  editingPost = null, 
+  isDarkMode 
+}) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const isEditing = Boolean(editingPost);
+
+  // Sync state when modal opens or editingPost changes
+  useEffect(() => {
+    if (editingPost) {
+      setTitle(editingPost.title || '');
+      setBody(editingPost.body || '');
+      setAuthorName(editingPost.authorName || '');
+    } else {
+      setTitle('');
+      setBody('');
+      setAuthorName('');
+    }
+    setError('');
+    setSuccess(false);
+  }, [editingPost, isOpen]);
 
   if (!isOpen) return null;
 
@@ -18,18 +42,29 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
       return;
     }
 
-    const newPost = {
-      id: Date.now(),
-      title: title.trim(),
-      body: body.trim(),
-      userId: 999,
-      authorName: authorName.trim() || 'Community Contributor',
-      isCustom: true,
-      createdAt: new Date().toISOString()
-    };
-
-    onCreatePost(newPost);
-    setSuccess(true);
+    if (isEditing) {
+      const updated = {
+        ...editingPost,
+        title: title.trim(),
+        body: body.trim(),
+        authorName: authorName.trim() || editingPost.authorName || 'Community Contributor',
+        updatedAt: new Date().toISOString()
+      };
+      if (onUpdatePost) onUpdatePost(updated);
+      setSuccess(true);
+    } else {
+      const newPost = {
+        id: Date.now(),
+        title: title.trim(),
+        body: body.trim(),
+        userId: 999,
+        authorName: authorName.trim() || 'Community Contributor',
+        isCustom: true,
+        createdAt: new Date().toISOString()
+      };
+      if (onCreatePost) onCreatePost(newPost);
+      setSuccess(true);
+    }
 
     setTimeout(() => {
       setSuccess(false);
@@ -38,7 +73,7 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
       setAuthorName('');
       setError('');
       onClose();
-    }, 1000);
+    }, 800);
   };
 
   return (
@@ -68,7 +103,7 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
               <PenTool className="w-4 h-4" />
             </div>
             <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              Create New Article
+              {isEditing ? 'Edit Article' : 'Create New Article'}
             </h3>
           </div>
           <button
@@ -96,7 +131,7 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
           {success && (
             <div className="p-3 text-xs rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-2 font-medium">
               <CheckCircle2 className="w-4 h-4" />
-              Article created and saved successfully!
+              {isEditing ? 'Article updated successfully!' : 'Article created and saved successfully!'}
             </div>
           )}
 
@@ -165,8 +200,8 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
               onClick={onClose}
               className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors cursor-pointer ${
                 isDarkMode 
-                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700' 
+                  : 'bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200'
               }`}
             >
               Cancel
@@ -175,8 +210,17 @@ export default function CreatePostModal({ isOpen, onClose, onCreatePost, isDarkM
               type="submit"
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-95 shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
             >
-              <PlusCircle className="w-4 h-4" />
-              Publish Article
+              {isEditing ? (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Changes
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="w-4 h-4" />
+                  Publish Article
+                </>
+              )}
             </button>
           </div>
         </form>

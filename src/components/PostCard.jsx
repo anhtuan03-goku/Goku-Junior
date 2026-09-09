@@ -1,7 +1,15 @@
 import React from 'react';
-import { Bookmark, BookmarkCheck, Clock, ArrowUpRight, Tag } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Clock, ArrowUpRight, Tag, Pencil, Trash2 } from 'lucide-react';
 
-export default function PostCard({ post, isSaved, onToggleSave, onSelectPost, isDarkMode }) {
+export default function PostCard({ 
+  post, 
+  isSaved, 
+  onToggleSave, 
+  onSelectPost, 
+  onEditPost, 
+  onDeletePost, 
+  isDarkMode 
+}) {
   // Generate avatar color based on userId/postId
   const colors = [
     'from-blue-500 to-indigo-600',
@@ -25,7 +33,7 @@ export default function PostCard({ post, isSaved, onToggleSave, onSelectPost, is
       }`}
     >
       <div>
-        {/* Card Header Tag & Bookmark button */}
+        {/* Card Header Tag & Action buttons */}
         <div className="flex items-center justify-between gap-2 mb-4">
           <div className="flex items-center gap-2">
             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${
@@ -43,21 +51,64 @@ export default function PostCard({ post, isSaved, onToggleSave, onSelectPost, is
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onToggleSave(post)}
-            aria-label={isSaved ? 'Unsave article' : 'Save article'}
-            title={isSaved ? 'Unsave article' : 'Save article'}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${
-              isSaved
-                ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/40 hover:bg-purple-500/30'
-                : isDarkMode
-                  ? 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700'
-                  : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 border border-slate-200'
-            }`}
-          >
-            {isSaved ? <BookmarkCheck className="w-4 h-4 fill-purple-500 dark:fill-purple-400" /> : <Bookmark className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-1">
+            {onEditPost && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditPost(post);
+                }}
+                aria-label="Edit article"
+                title="Edit article"
+                className={`p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:bg-slate-700'
+                    : 'bg-slate-100 text-slate-500 hover:text-amber-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+              >
+                <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
+
+            {onDeletePost && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeletePost(post.id);
+                }}
+                aria-label="Delete article"
+                title="Delete article"
+                className={`p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-slate-800/80 text-slate-400 hover:text-red-400 hover:bg-slate-700'
+                    : 'bg-slate-100 text-slate-500 hover:text-red-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+              >
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSave(post);
+              }}
+              aria-label={isSaved ? 'Unsave article' : 'Save article'}
+              title={isSaved ? 'Unsave article' : 'Save article'}
+              className={`p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer ${
+                isSaved
+                  ? 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/40 hover:bg-purple-500/30'
+                  : isDarkMode
+                    ? 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700'
+                    : 'bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 border border-slate-200'
+              }`}
+            >
+              {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-purple-500 dark:fill-purple-400" /> : <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Title Heading H3 for Semantic Structure */}
