@@ -4,6 +4,7 @@ import Header from './components/Header';
 import PostCard from './components/PostCard';
 import PostDetailModal from './components/PostDetailModal';
 import CreatePostModal from './components/CreatePostModal';
+import AnalyticsModal from './components/AnalyticsModal';
 import { fetchPosts, fetchUsers } from './services/api';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useDebounce } from './hooks/useDebounce';
@@ -27,6 +28,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPost, setSelectedPost] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
 
   // Load data from API
@@ -160,6 +162,7 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         savedCount={savedPosts.length}
         onOpenCreateModal={() => setIsCreateModalOpen(true)}
+        onOpenAnalytics={() => setIsAnalyticsOpen(true)}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
       />
@@ -312,6 +315,15 @@ export default function App() {
         onCreatePost={handleCreatePost}
         onUpdatePost={handleUpdatePost}
         editingPost={editingPost}
+        isDarkMode={isDarkMode}
+      />
+
+      {/* Pulse Insights & Analytics Modal (TypeScript Module) */}
+      <AnalyticsModal
+        isOpen={isAnalyticsOpen}
+        onClose={() => setIsAnalyticsOpen(false)}
+        posts={allPosts}
+        savedPosts={savedPosts}
         isDarkMode={isDarkMode}
       />
     </div>

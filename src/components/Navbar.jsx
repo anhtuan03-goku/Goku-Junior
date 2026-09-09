@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Bookmark, PlusCircle, Search, Sparkles, Moon, Sun } from 'lucide-react';
+import { BookOpen, Bookmark, PlusCircle, Search, Sparkles, Moon, Sun, BarChart3 } from 'lucide-react';
 
 export default function Navbar({ 
   activeTab, 
@@ -8,6 +8,7 @@ export default function Navbar({
   setSearchQuery, 
   savedCount, 
   onOpenCreateModal,
+  onOpenAnalytics,
   isDarkMode,
   onToggleTheme
 }) {
@@ -115,6 +116,23 @@ export default function Navbar({
                 {savedCount}
               </span>
             )}
+          </button>
+
+          {/* Button: Insights & Analytics (TypeScript Module) */}
+          <button
+            id="open-analytics-btn"
+            type="button"
+            onClick={onOpenAnalytics}
+            aria-label="View blog analytics and insights"
+            title="Pulse Insights & Analytics (TypeScript)"
+            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-500 cursor-pointer ${
+              isDarkMode
+                ? 'text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400'
+                : 'text-slate-700 hover:bg-slate-200/80 hover:text-indigo-600'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 text-indigo-500" />
+            <span className="hidden md:inline">Insights</span>
           </button>
 
           {/* Button: Create New Post */}
