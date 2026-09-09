@@ -6,6 +6,7 @@ import PostDetailModal from './components/PostDetailModal';
 import CreatePostModal from './components/CreatePostModal';
 import { fetchPosts, fetchUsers } from './services/api';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useDebounce } from './hooks/useDebounce';
 import { Loader2, Bookmark, FileText, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -68,20 +69,23 @@ export default function App() {
     return [...activeCustomPosts, ...enrichedApiPosts];
   }, [apiPosts, customPosts, userMap, deletedPostIds]);
 
-  // Filter posts based on active tab and search query
+  // Debounce search query to optimize performance during fast typing
+  const debouncedSearchQuery = useDebounce(searchQuery, 250);
+
+  // Filter posts based on active tab and debounced search query
   const filteredPosts = useMemo(() => {
     let source = activeTab === 'saved' ? savedPosts : allPosts;
 
-    if (!searchQuery.trim()) return source;
+    if (!debouncedSearchQuery.trim()) return source;
 
-    const query = searchQuery.toLowerCase();
+    const query = debouncedSearchQuery.toLowerCase();
     return source.filter(
       (post) =>
         post.title.toLowerCase().includes(query) ||
         post.body.toLowerCase().includes(query) ||
         (post.authorName && post.authorName.toLowerCase().includes(query))
     );
-  }, [allPosts, savedPosts, activeTab, searchQuery]);
+  }, [allPosts, savedPosts, activeTab, debouncedSearchQuery]);
 
   // Toggle bookmark / saved post in localStorage (Immutable add/remove)
   const handleToggleSave = (postToToggle) => {
