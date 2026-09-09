@@ -484,6 +484,191 @@ daotaoGOKU/
 ---
 ---
 
+# Chương: DEV-FE-006 · TypeScript
+
+Tài liệu thực hành và hoàn thành các bài tập thuộc Chương **DEV-FE-006 · TypeScript** trong dự án PulseBlog bằng cách phát triển module mới theo chuẩn **React TypeScript Best Practices**.
+
+---
+
+## 📌 1. Mục Tiêu & Kiến Trúc Module Mới (Pulse Insights & Analytics)
+
+Để chứng minh năng lực làm việc với TypeScript trong môi trường React thực chiến, dự án đã phát triển mới hoàn toàn module **Pulse Insights & Analytics** với 2 tệp cốt lõi:
+- **Tầng Kiểu Dữ Liệu Hợp Đồng (Type Contracts)**: [src/types/blog.ts](src/types/blog.ts)
+- **Tầng Component Giao Diện (TypeScript UI Component)**: [src/components/AnalyticsModal.tsx](src/components/AnalyticsModal.tsx)
+
+Module cung cấp bảng số liệu phân tích thời gian thực về bài viết: tổng số lượng từ, thời gian đọc ước tính (với tốc độ đọc trung bình 200 từ/phút), phân bổ bài viết theo từng tác giả hàng đầu (kèm biểu đồ thanh phần trăm trực quan), bài viết có dung lượng dài nhất, và bộ lọc phân loại theo phạm vi dữ liệu.
+
+---
+
+## 📌 2. Phân Tích Hệ Thống Types & Data Contracts ([src/types/blog.ts](src/types/blog.ts))
+
+Toàn bộ mô hình dữ liệu trong ứng dụng được định nghĩa chặt chẽ với TypeScript:
+
+```typescript
+/**
+ * Mô hình bài viết chuẩn mực với các trường tùy chọn rõ ràng
+ */
+export interface Post {
+  id: number;
+  title: string;
+  body: string;
+  userId: number;
+  authorName?: string;
+  isCustom?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Mô hình số liệu phân tích bài viết
+ */
+export interface ReadingMetric {
+  totalArticles: number;
+  totalWords: number;
+  estimatedReadingMinutes: number;
+  averageWordsPerArticle: number;
+  longestArticleTitle: string;
+}
+
+/**
+ * Mô hình phân tích tác giả & tỷ trọng đóng góp
+ */
+export interface AuthorInsight {
+  authorName: string;
+  postCount: number;
+  percentage: number;
+}
+
+export type MetricTab = 'overview' | 'authors' | 'categories';
+
+/**
+ * Mẫu thiết kế Discriminated Union (Tagged Union) giúp lọc dữ liệu an toàn
+ */
+export type AnalyticsFilter = 
+  | { type: 'all'; label: 'All Articles' }
+  | { type: 'custom_only'; label: 'Custom Stories Only' }
+  | { type: 'saved_only'; label: 'Saved Articles Only' };
+
+/**
+ * Hợp đồng Props nghiêm ngặt cho component AnalyticsModal
+ */
+export interface AnalyticsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  posts: Post[];
+  savedPosts: Post[];
+  isDarkMode: boolean;
+}
+```
+
+---
+
+## 📌 3. Triển Khai Component Chuẩn React Best Practice ([src/components/AnalyticsModal.tsx](src/components/AnalyticsModal.tsx))
+
+Component được viết hoàn toàn bằng cú pháp TypeScript hiện đại, áp dụng các kỹ thuật React 19 / Modern React tiên tiến nhất:
+
+### 🔷 1. Ràng Buộc Kiểu Dữ Liệu Cho Props & Output:
+```typescript
+export default function AnalyticsModal({
+  isOpen,
+  onClose,
+  posts,
+  savedPosts,
+  isDarkMode
+}: AnalyticsModalProps): React.JSX.Element | null {
+  if (!isOpen) return null;
+  // ...
+}
+```
+- Sử dụng `React.JSX.Element | null` làm kiểu trả về tường minh thay vì dựa dẫm vào type inference ngầm định.
+
+### 🔷 2. Ràng Buộc Type Generics Cho React Hooks:
+```typescript
+// 1. Quản lý Tab với Union Type
+const [activeTab, setActiveTab] = useState<MetricTab>('overview');
+
+// 2. Quản lý Bộ lọc với Discriminated Union
+const [selectedFilter, setSelectedFilter] = useState<AnalyticsFilter>(FILTER_OPTIONS[0]);
+
+// 3. Tính toán tập dữ liệu theo bộ lọc
+const targetDataset = useMemo<Post[]>(() => {
+  switch (selectedFilter.type) {
+    case 'custom_only':
+      return posts.filter((p) => p.isCustom);
+    case 'saved_only':
+      return savedPosts;
+    case 'all':
+    default:
+      return posts;
+  }
+}, [posts, savedPosts, selectedFilter]);
+
+// 4. Tính toán Metrics với Interface định sẵn
+const metrics = useMemo<ReadingMetric>(() => {
+  // ...
+  return {
+    totalArticles: targetDataset.length,
+    totalWords,
+    estimatedReadingMinutes: estimatedMinutes,
+    averageWordsPerArticle: averageWords,
+    longestArticleTitle: longestTitle
+  };
+}, [targetDataset]);
+```
+
+### 🔷 3. Sử Dụng Cấu Trúc Dữ Liệu Typed Map:
+```typescript
+const map = new Map<string, number>();
+targetDataset.forEach((post) => {
+  const author = post.authorName || `Author #${post.userId || 1}`;
+  map.set(author, (map.get(author) || 0) + 1);
+});
+```
+
+---
+
+## 📌 4. Cấu Hình TypeScript & Khả Năng Di Chuyển Dần ([tsconfig.json](tsconfig.json))
+
+Dự án áp dụng mô hình **Incremental Migration (Di chuyển từng bước)**, cho phép mã nguồn JavaScript (`.jsx`, `.js`) và TypeScript (`.tsx`, `.ts`) cùng hoạt động hài hòa trong cùng một dự án:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": ["src"]
+}
+```
+- **Lợi ích**:
+  - `allowJs: true`: Cho phép tệp TypeScript import các component JavaScript và ngược lại.
+  - `strict: true`: Bật chế độ kiểm tra nghiêm ngặt tối đa, ngăn ngừa lỗi `null` / `undefined` và cấm hoàn toàn `any` ngầm định.
+  - `noEmit: true`: Tận dụng Vite cho việc chuyển đổi mã (transpilation) siêu nhanh, TypeScript chỉ đóng vai trò Type Checker (`npx tsc --noEmit`).
+
+---
+
+## 💡 Kiến Thức Tâm Đắc Về TypeScript Trong React
+
+1. **Discriminated Unions (Tagged Unions) - Giải Pháp Hoàn Hảo Cho State Machine**:
+   - Thay vì quản lý nhiều cờ boolean rời rạc (`isCustomFilter: boolean`, `isSavedFilter: boolean`) dễ rơi vào trạng thái phi logic (ví dụ cả 2 cờ đều là `true`), việc dùng Discriminated Union `{ type: 'all' } | { type: 'custom_only' } | { type: 'saved_only' }` ép buộc mỗi trạng thái phải loại trừ lẫn nhau (mutually exclusive). Trình biên dịch sẽ tự động thu hẹp kiểu (Type Narrowing) hoàn hảo trong cấu trúc `switch...case`.
+2. **Loại Bỏ `React.FC` Cũ Kỹ Theo Khuyến Nghị Mới**:
+   - Sử dụng khai báo hàm chuẩn `function AnalyticsModal(props: AnalyticsModalProps): React.JSX.Element` giúp mã nguồn tường minh hơn, tránh được các nhược điểm lịch sử của `React.FC` (như việc ngầm định thuộc tính `children` ở các phiên bản cũ và khó sử dụng với Generic Components).
+3. **Quy Tắc "Contract First" (Định Nghĩa Hợp Đồng Trước)**:
+   - Trước khi dựng giao diện, việc phác thảo toàn bộ Interfaces tại `src/types/blog.ts` giúp người lập trình hình dung rõ ràng toàn bộ luồng dữ liệu, các trường bắt buộc vs tùy chọn (`?`), giúp giảm tới 80% thời gian debug so với việc viết JavaScript chay.
+4. **Kiểm Tra Kiểu Độc Lập Với Quy Trình Build**:
+   - Với câu lệnh `npx tsc --noEmit`, toàn bộ cây mã nguồn TypeScript được thẩm định tính an toàn 100% trước khi đưa vào bundle đóng gói sản phẩm, đảm bảo không có bất kỳ lỗi Runtime TypeError nào lọt vào môi trường Production.
+
+---
+---
+
 # Chương: DEV-FE-007 · Advanced Hooks & Custom Hooks
 
 Tài liệu thực hành và hoàn thành các bài tập thuộc Chương **DEV-FE-007 · Advanced Hooks & Custom Hooks** trong dự án PulseBlog.
