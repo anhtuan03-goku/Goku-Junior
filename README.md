@@ -98,7 +98,7 @@ Tài liệu thực hành và hoàn thành các bài tập thuộc Chương **DEV
 ### 📋 Đáp Án & Giải Pháp Đã Triển Khai:
 
 1. **Cấu trúc Semantic Web & SEO**:
-   - Khởi tạo Hero Section tại tệp [Header.jsx](file:///E:/daotaoGOKU/src/components/Header.jsx) bằng thẻ ngữ nghĩa `<section aria-labelledby="hero-main-title">`.
+   - Khởi tạo Hero Section tại tệp [Header.jsx](src/components/Header.jsx) bằng thẻ ngữ nghĩa `<section aria-labelledby="hero-main-title">`.
    - Tiêu đề chính sử dụng duy nhất thẻ `<h1 id="hero-main-title">` cho toàn trang, kết hợp các đoạn văn bản `<p>` và danh mục chủ đề (`#Technology`, `#WebDesign`, `#Insights`).
    - Các nút bấm và thành phần tương tác đều thiết lập thuộc tính `cursor-pointer` giúp tối ưu trải nghiệm người dùng (UX).
 
@@ -117,11 +117,11 @@ Tài liệu thực hành và hoàn thành các bài tập thuộc Chương **DEV
 
 1. **Component Hóa Hợp Lý**:
    - Ứng dụng được chia nhỏ thành các React components tập trung và tái sử dụng tốt:
-     - [Navbar.jsx](file:///E:/daotaoGOKU/src/components/Navbar.jsx): Thanh điều hướng, bộ lọc tìm kiếm và chuyển đổi giao diện Sáng/Tối.
-     - [Header.jsx](file:///E:/daotaoGOKU/src/components/Header.jsx): Hero banner truyền tải thông tin & thống kê bài viết.
-     - [PostCard.jsx](file:///E:/daotaoGOKU/src/components/PostCard.jsx): Card hiển thị bài viết với thẻ `<article>` chuẩn SEO.
-     - [PostDetailModal.jsx](file:///E:/daotaoGOKU/src/components/PostDetailModal.jsx): Hộp thoại đọc chi tiết bài viết và bình luận.
-     - [CreatePostModal.jsx](file:///E:/daotaoGOKU/src/components/CreatePostModal.jsx): Form tạo bài viết mới.
+     - [Navbar.jsx](src/components/Navbar.jsx): Thanh điều hướng, bộ lọc tìm kiếm và chuyển đổi giao diện Sáng/Tối.
+     - [Header.jsx](src/components/Header.jsx): Hero banner truyền tải thông tin & thống kê bài viết.
+     - [PostCard.jsx](src/components/PostCard.jsx): Card hiển thị bài viết với thẻ `<article>` chuẩn SEO.
+     - [PostDetailModal.jsx](src/components/PostDetailModal.jsx): Hộp thoại đọc chi tiết bài viết và bình luận.
+     - [CreatePostModal.jsx](src/components/CreatePostModal.jsx): Form tạo bài viết mới.
 
 2. **Tối Ưu Class & Tailwind Utilities**:
    - Sử dụng các utility classes trong `src/index.css` (`.glass-card-dark`, `.glass-card-light`, `.glass-nav-dark`, `.glass-nav-light`) để tối giản lượng code Tailwind trùng lặp.
@@ -164,12 +164,12 @@ Dự án PulseBlog được xây dựng và củng cố vững chắc nền tả
 
 | Component | Đường dẫn tệp | Vai trò & Trách nhiệm | Props nhận vào |
 | :--- | :--- | :--- | :--- |
-| **App** | [App.jsx](file:///E:/daotaoGOKU/src/App.jsx) | **Root/Container**: Quản lý state tập trung (`allPosts`, `savedPosts`, `searchQuery`, `activeTab`, v.v.), tích hợp API service và LocalStorage hooks. | *(Root component)* |
-| **Navbar** | [Navbar.jsx](file:///E:/daotaoGOKU/src/components/Navbar.jsx) | Thanh điều hướng đầu trang, chứa ô tìm kiếm thời gian thực, bộ lọc tab (`All` vs `Saved`), nút tạo bài viết và chuyển đổi Dark/Light mode. | `activeTab`, `setActiveTab`, `searchQuery`, `setSearchQuery`, `savedCount`, `onOpenCreateModal`, `isDarkMode`, `onToggleTheme` |
-| **Header** | [Header.jsx](file:///E:/daotaoGOKU/src/components/Header.jsx) | Hero Section hiển thị banner thương hiệu, danh mục chủ đề nổi bật và các thẻ thống kê tổng quan (Total Articles, Saved, Active Contributors). | `totalPosts`, `savedCount`, `totalUsers`, `isDarkMode` |
-| **PostCard** | [PostCard.jsx](file:///E:/daotaoGOKU/src/components/PostCard.jsx) | Thẻ card biểu diễn từng bài viết với Semantic HTML `<article>`, gồm badge tác giả, tiêu đề, tóm tắt nội dung, nút bookmark, nút sửa và nút xóa. | `post`, `isSaved`, `onToggleSave`, `onSelectPost`, `onEditPost`, `onDeletePost`, `isDarkMode` |
-| **PostDetailModal** | [PostDetailModal.jsx](file:///E:/daotaoGOKU/src/components/PostDetailModal.jsx) | Hộp thoại chi tiết bài viết, fetch & hiển thị danh sách bình luận (comments), hỗ trợ bookmark, sửa và xóa ngay trong modal. | `post`, `onClose`, `isSaved`, `onToggleSave`, `onEditPost`, `onDeletePost`, `isDarkMode` |
-| **CreatePostModal** | [CreatePostModal.jsx](file:///E:/daotaoGOKU/src/components/CreatePostModal.jsx) | Form Modal tương tác hỗ trợ cả **Tạo mới** và **Chỉnh sửa** bài viết với validation dữ liệu trước khi gửi. | `isOpen`, `onClose`, `onCreatePost`, `onUpdatePost`, `editingPost`, `isDarkMode` |
+| **App** | [App.jsx](src/App.jsx) | **Root/Container**: Quản lý state tập trung (`allPosts`, `savedPosts`, `searchQuery`, `activeTab`, v.v.), tích hợp API service và LocalStorage hooks. | *(Root component)* |
+| **Navbar** | [Navbar.jsx](src/components/Navbar.jsx) | Thanh điều hướng đầu trang, chứa ô tìm kiếm thời gian thực, bộ lọc tab (`All` vs `Saved`), nút tạo bài viết và chuyển đổi Dark/Light mode. | `activeTab`, `setActiveTab`, `searchQuery`, `setSearchQuery`, `savedCount`, `onOpenCreateModal`, `isDarkMode`, `onToggleTheme` |
+| **Header** | [Header.jsx](src/components/Header.jsx) | Hero Section hiển thị banner thương hiệu, danh mục chủ đề nổi bật và các thẻ thống kê tổng quan (Total Articles, Saved, Active Contributors). | `totalPosts`, `savedCount`, `totalUsers`, `isDarkMode` |
+| **PostCard** | [PostCard.jsx](src/components/PostCard.jsx) | Thẻ card biểu diễn từng bài viết với Semantic HTML `<article>`, gồm badge tác giả, tiêu đề, tóm tắt nội dung, nút bookmark, nút sửa và nút xóa. | `post`, `isSaved`, `onToggleSave`, `onSelectPost`, `onEditPost`, `onDeletePost`, `isDarkMode` |
+| **PostDetailModal** | [PostDetailModal.jsx](src/components/PostDetailModal.jsx) | Hộp thoại chi tiết bài viết, fetch & hiển thị danh sách bình luận (comments), hỗ trợ bookmark, sửa và xóa ngay trong modal. | `post`, `onClose`, `isSaved`, `onToggleSave`, `onEditPost`, `onDeletePost`, `isDarkMode` |
+| **CreatePostModal** | [CreatePostModal.jsx](src/components/CreatePostModal.jsx) | Form Modal tương tác hỗ trợ cả **Tạo mới** và **Chỉnh sửa** bài viết với validation dữ liệu trước khi gửi. | `isOpen`, `onClose`, `onCreatePost`, `onUpdatePost`, `editingPost`, `isDarkMode` |
 
 ---
 
@@ -178,7 +178,7 @@ Dự án PulseBlog được xây dựng và củng cố vững chắc nền tả
 Trong React, **Immutability (Tính bất biến)** là nguyên tắc tối thượng: không được thay đổi trực tiếp (`mutation`) giá trị trong bộ nhớ của state cũ (không dùng `.push()`, `.splice()`, không gán `state.prop = ...`). Thay vào đó, ta luôn tạo một đối tượng hoặc mảng mới bằng toán tử Spread (`...`) và các hàm thuần túy (`.map()`, `.filter()`). Điều này cho phép React so sánh tham chiếu (`shallow comparison`) để phát hiện thay đổi và kích hoạt re-render chính xác.
 
 #### ➕ Thao tác Thêm Mới (Create):
-Triển khai trong [App.jsx](file:///E:/daotaoGOKU/src/App.jsx):
+Triển khai trong [App.jsx](src/App.jsx):
 ```javascript
 const handleCreatePost = (newPost) => {
   setCustomPosts((prev) => [newPost, ...prev]);
@@ -187,7 +187,7 @@ const handleCreatePost = (newPost) => {
 - **Kỹ thuật**: Sử dụng cú pháp Spread `[newPost, ...prev]` để tạo một mảng hoàn toàn mới có `newPost` ở đầu mảng và giữ nguyên toàn bộ các phần tử cũ.
 
 #### ✏️ Thao tác Sửa (Update):
-Triển khai trong [App.jsx](file:///E:/daotaoGOKU/src/App.jsx):
+Triển khai trong [App.jsx](src/App.jsx):
 ```javascript
 const handleUpdatePost = (updatedPost) => {
   // Cập nhật mảng customPosts một cách bất biến
@@ -211,7 +211,7 @@ const handleUpdatePost = (updatedPost) => {
 - **Kỹ thuật**: Hàm `.map()` trả về một mảng mới. Khi duyệt đến phần tử khớp `id === updatedPost.id`, ta dùng `{ ...p, ...updatedPost }` để tạo ra một object mới kế thừa các thuộc tính và ghi đè thuộc tính được sửa. Các phần tử còn lại giữ nguyên tham chiếu.
 
 #### 🗑️ Thao tác Xóa (Delete):
-Triển khai trong [App.jsx](file:///E:/daotaoGOKU/src/App.jsx):
+Triển khai trong [App.jsx](src/App.jsx):
 ```javascript
 const handleDeletePost = (postId) => {
   if (window.confirm('Are you sure you want to delete this article?')) {
@@ -227,7 +227,7 @@ const handleDeletePost = (postId) => {
 - **Kỹ thuật**: Dùng `.filter()` trả về một mảng mới loại bỏ bài viết có `id === postId`. Danh sách `deletedPostIds` được lưu vào `localStorage` đảm bảo trạng thái xóa được duy trì ngay cả khi tải lại trang.
 
 #### 🔖 Thao tác Toggle Bookmark (Lưu / Bỏ lưu):
-Triển khai trong [App.jsx](file:///E:/daotaoGOKU/src/App.jsx):
+Triển khai trong [App.jsx](src/App.jsx):
 ```javascript
 const handleToggleSave = (postToToggle) => {
   setSavedPosts((prevSaved) => {
@@ -246,7 +246,7 @@ const handleToggleSave = (postToToggle) => {
 ### 🔷 3. Render Danh Sách Có Key; Controlled Form Thêm / Sửa
 
 #### 🔑 Vai Trò Của Key Trong Render Danh Sách:
-- Khi render danh sách trong [App.jsx](file:///E:/daotaoGOKU/src/App.jsx):
+- Khi render danh sách trong [App.jsx](src/App.jsx):
   ```jsx
   {filteredPosts.map((post) => (
     <PostCard
@@ -261,7 +261,7 @@ const handleToggleSave = (postToToggle) => {
     />
   ))}
   ```
-- Tương tự với danh sách bình luận trong [PostDetailModal.jsx](file:///E:/daotaoGOKU/src/components/PostDetailModal.jsx):
+- Tương tự với danh sách bình luận trong [PostDetailModal.jsx](src/components/PostDetailModal.jsx):
   ```jsx
   {comments.map((comment) => (
     <div key={comment.id} className="...">
@@ -275,7 +275,7 @@ const handleToggleSave = (postToToggle) => {
   - Sử dụng `post.id` duy nhất và cố định giúp React chỉ thêm, sửa hoặc xóa đúng DOM node tương ứng một cách tối ưu nhất.
 
 #### 📝 Controlled Form Thêm & Sửa Bài Viết:
-Triển khai trong [CreatePostModal.jsx](file:///E:/daotaoGOKU/src/components/CreatePostModal.jsx):
+Triển khai trong [CreatePostModal.jsx](src/components/CreatePostModal.jsx):
 - Form được quản lý hoàn toàn bằng React State:
   ```javascript
   const [title, setTitle] = useState('');
@@ -328,7 +328,7 @@ Triển khai trong [CreatePostModal.jsx](file:///E:/daotaoGOKU/src/components/Cr
 - Nếu mỗi component giữ một bản sao state riêng, dữ liệu sẽ bị phân mảnh, không đồng bộ và không thể giao tiếp trực tiếp giữa các component anh em (sibling components).
 
 #### 💡 Giải Pháp Lifting State Up (Nâng State Lên Cha Chung Gần Nhất):
-Toàn bộ các state chia sẻ được nâng lên component cha cao nhất: [App.jsx](file:///E:/daotaoGOKU/src/App.jsx):
+Toàn bộ các state chia sẻ được nâng lên component cha cao nhất: [App.jsx](src/App.jsx):
 ```javascript
 // State dữ liệu bài viết & danh mục
 const [apiPosts, setApiPosts] = useState([]);
