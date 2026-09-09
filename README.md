@@ -388,15 +388,259 @@ const [isDarkMode, setIsDarkMode] = useLocalStorage('pulse_blog_dark_mode', true
   // 2. Chỉ tính toán danh sách bài viết gộp khi các nguồn dữ liệu thay đổi
   const allPosts = useMemo(() => { ... }, [apiPosts, customPosts, userMap, deletedPostIds]);
 
-  // 3. Chỉ tính toán lọc bài viết khi nội dung bài viết, tab hoặc từ khóa thay đổi
+  // 3. Chỉ tính toán lọc bài viết khi nội dung bài viết, tab hoặc từ khóa debounced thay đổi
+  const debouncedSearchQuery = useDebounce(searchQuery, 250);
+
   const filteredPosts = useMemo(() => {
     let source = activeTab === 'saved' ? savedPosts : allPosts;
-    if (!searchQuery.trim()) return source;
-    const query = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery.trim()) return source;
+    const query = debouncedSearchQuery.toLowerCase();
     return source.filter((post) => ...);
-  }, [allPosts, savedPosts, activeTab, searchQuery]);
+  }, [allPosts, savedPosts, activeTab, debouncedSearchQuery]);
   ```
   - Khi người dùng thực hiện các tương tác không ảnh hưởng đến dữ liệu hiển thị (ví dụ: đổi theme Dark/Light, mở/đóng modal xem chi tiết), `filteredPosts` không cần duyệt qua mảng hàng trăm bài viết để lọc lại từ đầu, giúp ứng dụng duy trì tốc độ phản hồi tức thì (60fps).
+
+---
+---
+
+# Chương: DEV-FE-005 · Codebase Overview
+
+Tài liệu thực hành và phân tích toàn diện thuộc Chương **DEV-FE-005 · Codebase Overview** trong dự án PulseBlog.
+
+---
+
+## 📌 1. Cấu Trúc Dự Án & Nguyên Tắc Phân Tách Mối Bận Tâm (SoC)
+
+Dự án PulseBlog được tổ chức theo cấu trúc module hóa cao, tuân thủ chặt chẽ nguyên tắc **Separation of Concerns (SoC)** nhằm tối ưu khả năng mở rộng, bảo trì và kiểm thử:
+
+```
+daotaoGOKU/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml            # Pipeline CI/CD tự động build & deploy lên GitHub Pages
+├── public/                       # Tài nguyên tĩnh độc lập không qua bundler
+├── src/
+│   ├── assets/                   # Hình ảnh, icons và tài nguyên media nội bộ
+│   ├── components/               # Tầng giao diện người dùng (UI Components)
+│   │   ├── CreatePostModal.jsx   # Modal form tạo mới & chỉnh sửa bài viết
+│   │   ├── Header.jsx            # Hero Section & các thẻ thống kê bài viết
+│   │   ├── Navbar.jsx            # Thanh điều hướng, bộ lọc tìm kiếm & Theme toggle
+│   │   ├── PostCard.jsx          # Thẻ hiển thị tóm tắt bài viết chuẩn Semantic HTML
+│   │   └── PostDetailModal.jsx   # Hộp thoại đọc toàn văn bài viết & bình luận
+│   ├── hooks/                    # Tầng Custom Hooks tái sử dụng logic
+│   │   ├── useDebounce.js        # Hook trì hoãn tần suất cập nhật dữ liệu (Search)
+│   │   └── useLocalStorage.js    # Hook đồng bộ State với Web Storage API
+│   ├── services/                 # Tầng giao tiếp mạng & API Services
+│   │   └── api.js                # Tách biệt toàn bộ fetch requests ra khỏi UI
+│   ├── App.css                   # Custom animation keyframes
+│   ├── App.jsx                   # Orchestrator / Root Stateful Component
+│   ├── index.css                 # Import Tailwind CSS, Google Fonts & Glassmorphism classes
+│   └── main.jsx                  # Điểm khởi chạy ứng dụng (React Root & StrictMode)
+├── .oxlintrc.json                # Cấu hình siêu linter Oxlint cực nhanh
+├── index.html                    # Tệp HTML chính chứa SEO meta tags & Fonts preload
+├── package.json                  # Khai báo dependencies & scripts thực thi
+└── vite.config.js                # Cấu hình Vite bundler & Base path GitHub Pages
+```
+
+---
+
+## 📌 2. Phân Tích Các Tầng Kiến Trúc Trọng Tâm
+
+### 🌐 Tầng Giao Tiếp Mạng & Dịch Vụ API ([src/services/api.js](src/services/api.js))
+- **Mục đích**: Tách biệt 100% logic gọi API ra khỏi các React Components.
+- **Phương thức xử lý**:
+  - `fetchPosts()`: Lấy danh sách bài viết từ JSONPlaceholder.
+  - `fetchUsers()`: Lấy thông tin tác giả để ánh xạ (`authorName`).
+  - `fetchPostComments(postId)`: Tải danh sách bình luận tương ứng theo từng bài viết.
+- **Xử lý ngoại lệ**: Sử dụng khối `try...catch` tập trung, kiểm tra `response.ok` và ném lỗi có ngữ cảnh rõ ràng, tránh gây crash giao diện khi mất mạng hoặc API lỗi.
+
+### 💾 Tầng Dữ Liệu Lai (Hybrid State Architecture)
+Ứng dụng áp dụng mô hình dữ liệu lai kết hợp linh hoạt giữa hai nguồn:
+1. **Server State**: Dữ liệu bài viết và người dùng lấy từ API bên ngoài.
+2. **Client Persistent State**: Dữ liệu do người dùng tạo ra (custom posts), danh sách bài viết đã lưu (saved/bookmarks), danh sách bài viết đã xóa (deleted IDs), và tùy chọn giao diện Dark/Light mode được lưu trữ bền vững trong `localStorage`.
+- **Hợp nhất dữ liệu (Data Merging)**: Trong [src/App.jsx](src/App.jsx), `useMemo` tự động kết hợp bài viết từ API và Custom Posts, gắn tên tác giả thông qua bảng tra cứu `userMap`, và loại trừ các bài viết nằm trong `deletedPostIds`.
+
+### 🎨 Tầng Giao Diện & Design System ([src/index.css](src/index.css))
+- **Tailwind CSS v4 Integration**: Sử dụng `@tailwindcss/vite` tích hợp trực tiếp vào quy trình biên dịch của Vite, cho tốc độ HMR (Hot Module Replacement) tức thì dưới 10ms.
+- **Glassmorphism & High Contrast**: Các class `.glass-card-dark`, `.glass-card-light`, `.glass-nav-dark`, `.glass-nav-light` tạo hiệu ứng mờ nền kính hiện đại.
+- **Chuyển đổi màu sắc siêu mượt (700ms Theme Transition)**: Cấu hình `transition: background-color 700ms, border-color 700ms, color 700ms` với hàm gia tốc `cubic-bezier(0.4, 0, 0.2, 1)` giúp việc chuyển đổi Dark/Light mode diễn ra êm dịu, không giật màn hình.
+
+### 🚀 Tầng Tự Động Hóa & Triển Khai (CI/CD) ([.github/workflows/deploy.yml](.github/workflows/deploy.yml))
+- Tự động kích hoạt khi có commit đẩy lên nhánh `main`.
+- Sử dụng Node.js 20, tự động chạy `npm ci` và `npm run build`.
+- Upload thư mục sản phẩm `./dist` và xuất bản trực tiếp lên GitHub Pages hoàn toàn tự động.
+
+---
+
+## 💡 Kiến Thức Tâm Đắc Về Kiến Trúc Codebase
+
+1. **Single Source of Truth (Nguồn chân lý duy nhất)**:
+   - Thay vì để mỗi modal hay mỗi component con tự quản lý danh sách bài viết riêng lẻ, việc quy tụ toàn bộ state về [src/App.jsx](src/App.jsx) loại bỏ hoàn toàn nguy cơ bất đồng bộ dữ liệu giữa Navbar (số lượng saved), Header (tổng số bài viết) và Grid bài viết.
+2. **Khai thác sức mạnh của Derived State thay vì Duplicate State**:
+   - Không lưu trữ `filteredPosts` thành một state riêng biệt bằng `useState` (vì việc đồng bộ giữa `posts`, `searchQuery` và `filteredPosts` thủ công rất dễ sinh ra lỗi out-of-sync hoặc vòng lặp render vô tận). Thay vào đó, tính toán động bằng `useMemo` dựa trên `allPosts`, `savedPosts`, `activeTab` và `debouncedSearchQuery`.
+3. **Hiệu năng công cụ phát triển (DX) thế hệ mới**:
+   - Sử dụng **Vite 8** kết hợp cùng **Oxlint** (linter viết bằng Rust) giúp kiểm tra toàn bộ mã nguồn trong chưa đầy 10ms, nhanh hơn hàng chục lần so với ESLint truyền thống.
+
+---
+---
+
+# Chương: DEV-FE-007 · Advanced Hooks & Custom Hooks
+
+Tài liệu thực hành và hoàn thành các bài tập thuộc Chương **DEV-FE-007 · Advanced Hooks & Custom Hooks** trong dự án PulseBlog.
+
+---
+
+## 📌 1. Tổng Quan Về Hệ Thống Hooks Trong Dự Án
+
+PulseBlog tận dụng tối đa các Hooks chính thống của React cùng các Custom Hooks tự xây dựng để quản lý vòng đời, tối ưu hiệu năng và trừu tượng hóa các tác vụ phức tạp:
+
+| Hook | Tệp triển khai | Vai trò & Mục đích sử dụng |
+| :--- | :--- | :--- |
+| **`useState`** | Toàn bộ components | Quản lý trạng thái cục bộ của form, modal visibility, danh sách bài viết và active tab. |
+| **`useEffect`** | `App.jsx`, `PostDetailModal.jsx`, `CreatePostModal.jsx`, hooks | Xử lý Side-Effects: Gọi API khi mount, đồng bộ dữ liệu vào `localStorage`, fetch bình luận theo `postId`. |
+| **`useMemo`** | `src/App.jsx` | Ghi nhớ kết quả tính toán tốn kém: map tác giả `userMap`, danh sách gộp `allPosts`, và bộ lọc tìm kiếm `filteredPosts`. |
+| **`useLocalStorage`** | [src/hooks/useLocalStorage.js](src/hooks/useLocalStorage.js) | **Custom Hook**: Đồng bộ và lưu trữ hai chiều trạng thái React vào `window.localStorage` an toàn. |
+| **`useDebounce`** | [src/hooks/useDebounce.js](src/hooks/useDebounce.js) | **Custom Hook**: Trì hoãn tần suất cập nhật dữ liệu của ô tìm kiếm, triệt tiêu re-render thừa khi gõ nhanh. |
+
+---
+
+## 📌 2. Đi Sâu Phân Tích Các Custom Hooks Tự Phát Triển
+
+### 🔷 Custom Hook 1: `useLocalStorage` ([src/hooks/useLocalStorage.js](src/hooks/useLocalStorage.js))
+
+Hook chuyên trách giải quyết bài toán đồng bộ dữ liệu giữa bộ nhớ React State và Web Storage API của trình duyệt:
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export function useLocalStorage(key, initialValue) {
+  // 1. Khởi tạo State trễ (Lazy State Initialization)
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(`Error reading localStorage key "${key}":`, error);
+      return initialValue;
+    }
+  });
+
+  // 2. Tự động đồng bộ vào Web Storage khi state thay đổi
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(storedValue));
+    } catch (error) {
+      console.error(`Error setting localStorage key "${key}":`, error);
+    }
+  }, [key, storedValue]);
+
+  return [storedValue, setStoredValue];
+}
+```
+
+#### 🌟 Điểm Sáng Kỹ Thuật & Kiến Thức Tâm Đắc:
+1. **Khởi tạo State Trễ (Lazy Initial State)**:
+   - *Vấn đề*: `window.localStorage.getItem` là một thao tác đọc đĩa I/O đồng bộ (blocking synchronous I/O). Nếu truyền trực tiếp `useState(window.localStorage.getItem(key))`, thao tác đọc đĩa sẽ bị ép thực thi ở **mọi lần component re-render**, làm suy giảm hiệu năng nghiêm trọng.
+   - *Giải pháp*: Truyền một hàm callback khởi tạo `useState(() => { ... })`. React chỉ thực thi hàm này **duy nhất một lần** khi component khởi tạo (mount), hoàn toàn bỏ qua ở các chu kỳ render tiếp theo.
+2. **Khả năng phục hồi lỗi (Graceful Degradation)**:
+   - Bao bọc bằng `try...catch` giúp ứng dụng không bị sập (crash) trong các trường hợp người dùng bật chế độ ẩn danh (Private Browsing) chặn cookie/storage, hoặc khi dung lượng ổ cứng đầy (`QuotaExceededError`).
+3. **Chuẩn hóa giao diện tương thích (API Consistency)**:
+   - Trả về tuple `[storedValue, setStoredValue]` tương tự như `useState` nguyên bản, hỗ trợ cả cách truyền giá trị trực tiếp lẫn truyền hàm cập nhật hàm (`prev => ...`).
+
+---
+
+### 🔷 Custom Hook 2: `useDebounce` ([src/hooks/useDebounce.js](src/hooks/useDebounce.js))
+
+Hook chuyên xử lý kỹ thuật **Debouncing** cho các sự kiện phát sinh liên tục với tần suất cao (High-frequency Events):
+
+```javascript
+import { useState, useEffect } from 'react';
+
+export function useDebounce(value, delay = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    // Thiết lập bộ hẹn giờ cập nhật giá trị sau khoảng delay
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    // Cleanup function: Hủy bỏ timer cũ nếu value thay đổi trước khi hết hạn delay
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+```
+
+#### 🌟 Điểm Sáng Kỹ Thuật & Kiến Thức Tâm Đắc:
+1. **Loại bỏ tính toán dư thừa khi tìm kiếm**:
+   - Khi người dùng gõ từ khóa `"react fundamentals"` (18 ký tự), nếu không debounce, ứng dụng sẽ thực hiện 18 lần lọc mảng và 18 lần re-render giao diện.
+   - Khi áp dụng `useDebounce(searchQuery, 250)` trong [src/App.jsx](src/App.jsx), việc lọc mảng chỉ được thực thi **duy nhất 1 lần** sau khi người dùng dừng tay 250ms, tiết kiệm tài nguyên CPU tối đa.
+2. **Cơ chế hàm dọn dẹp (Cleanup Function) trong `useEffect`**:
+   - Mỗi khi dependency `value` thay đổi trước khi timeout kết thúc, React sẽ gọi hàm cleanup của lần render trước để `clearTimeout(handler)`. Kỹ thuật này ngăn chặn triệt để rò rỉ bộ nhớ (Memory Leak) và triệt tiêu xung đột dữ liệu (Race Conditions).
+
+---
+
+## 📌 3. Các Mẫu Thiết Kế Nâng Cao Với Core Hooks
+
+### 🛡️ Ngăn Chặn State Update Trên Component Đã Unmount
+Triển khai trong [src/components/PostDetailModal.jsx](src/components/PostDetailModal.jsx):
+```javascript
+useEffect(() => {
+  if (!post || post.isCustom) {
+    setLoadingComments(false);
+    setComments([]);
+    return;
+  }
+
+  let isMounted = true;
+  setLoadingComments(true);
+
+  fetchPostComments(post.id)
+    .then((data) => {
+      if (isMounted) {
+        setComments(data);
+        setLoadingComments(false);
+      }
+    })
+    .catch(() => {
+      if (isMounted) setLoadingComments(false);
+    });
+
+  return () => {
+    isMounted = false; // Đánh dấu component đã unmount
+  };
+}, [post]);
+```
+- **Bài học kinh nghiệm**: Khi người dùng đóng modal trước khi API trả về kết quả, nếu không kiểm tra `isMounted`, hàm `setComments()` sẽ cố cập nhật state vào một component không còn tồn tại trong DOM, phát sinh cảnh báo bộ nhớ của React và làm sai lệch logic.
+
+### ⚡ Tối Ưu Bảng Tra Cứu O(1) Với `useMemo`
+Triển khai trong [src/App.jsx](src/App.jsx):
+```javascript
+const userMap = useMemo(() => {
+  const map = {};
+  users.forEach((u) => {
+    map[u.id] = u.name;
+  });
+  return map;
+}, [users]);
+```
+- Thay vì sử dụng phương thức `users.find(u => u.id === post.userId)` với độ phức tạp $O(N)$ trong mỗi lần duyệt từng bài viết (khiến tổng độ phức tạp tăng lên $O(M \times N)$), ta dùng `useMemo` tạo trước một Hash Map $O(1)$. Nhờ đó, việc truy xuất tên tác giả đạt hiệu suất tức thì bất kể số lượng bài viết lớn cỡ nào.
+
+---
+
+## 💡 Đúc Kết Các Nguyên Tắc Vàng Khi Làm Việc Với Hooks
+
+1. **Tuân thủ tuyệt đối Rules of Hooks**:
+   - Chỉ gọi Hooks ở cấp cao nhất của component (không đặt trong `if`, vòng lặp `for`, hay các hàm lồng nhau).
+   - Đảm bảo thứ tự gọi Hook luôn luôn nhất quán giữa các lần render để React duy trì đúng chỉ mục mảng Fiber node.
+2. **Khai báo đầy đủ Dependencies trong `useEffect` và `useMemo`**:
+   - Mọi biến số, hàm hoặc state được sử dụng bên trong callback của Hook đều phải được liệt kê vào dependency array. Tránh tình trạng "stale closures" (bắt phải giá trị cũ của state).
+3. **Phân biệt rạch ròi giữa UI Component và Logic Hooks**:
+   - Một component sạch sẽ chỉ nên tập trung vào việc mô tả giao diện trông như thế nào dựa trên dữ liệu. Toàn bộ logic phức tạp (gọi storage, debounce, network, timers) cần được gom nhóm vào Custom Hooks riêng biệt.
 
 ---
 
