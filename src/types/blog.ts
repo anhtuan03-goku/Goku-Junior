@@ -57,9 +57,10 @@ export type AnalyticsFilter =
   | { type: 'saved_only'; label: 'Saved Articles Only' };
 
 export interface AnalyticsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  posts: Post[];
-  savedPosts: Post[];
-  isDarkMode: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+  posts?: Post[];
+  savedPosts?: Post[];
+  isDarkMode?: boolean;
 }
+
