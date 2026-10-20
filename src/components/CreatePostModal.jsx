@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { X, PlusCircle, PenTool, CheckCircle2, Save } from 'lucide-react';
+import { useAppStore } from '../store/useAppStore';
 
-export default function CreatePostModal({ 
-  isOpen, 
-  onClose, 
-  onCreatePost, 
-  onUpdatePost, 
-  editingPost = null, 
-  isDarkMode 
-}) {
+export default function CreatePostModal(props) {
+  const storeIsOpen = useAppStore((state) => state.isCreateModalOpen);
+  const storeClose = useAppStore((state) => state.closeCreateModal);
+  const storeEditingPost = useAppStore((state) => state.editingPost);
+  const storeCreatePost = useAppStore((state) => state.createPost);
+  const storeUpdatePost = useAppStore((state) => state.updatePost);
+  const storeIsDarkMode = useAppStore((state) => state.isDarkMode);
+
+  const isOpen = props.isOpen !== undefined ? props.isOpen : storeIsOpen;
+  const onClose = props.onClose ?? storeClose;
+  const editingPost = props.editingPost !== undefined ? props.editingPost : storeEditingPost;
+  const onCreatePost = props.onCreatePost ?? storeCreatePost;
+  const onUpdatePost = props.onUpdatePost ?? storeUpdatePost;
+  const isDarkMode = props.isDarkMode ?? storeIsDarkMode;
+
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [authorName, setAuthorName] = useState('');

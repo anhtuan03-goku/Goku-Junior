@@ -1,7 +1,19 @@
 import React from 'react';
 import { Layers, BookmarkCheck, Users, Compass, Tag, Star } from 'lucide-react';
+import { useAppStore } from '../store/useAppStore';
+import { selectTotalPostsCount, selectSavedCount, selectTotalUsersCount } from '../store/selectors';
 
-export default function Header({ totalPosts, savedCount, totalUsers, isDarkMode }) {
+export default function Header(props) {
+  const storeTotalPosts = useAppStore(selectTotalPostsCount);
+  const storeSavedCount = useAppStore(selectSavedCount);
+  const storeTotalUsers = useAppStore(selectTotalUsersCount);
+  const storeIsDarkMode = useAppStore((state) => state.isDarkMode);
+
+  const totalPosts = props.totalPosts ?? storeTotalPosts;
+  const savedCount = props.savedCount ?? storeSavedCount;
+  const totalUsers = props.totalUsers ?? storeTotalUsers;
+  const isDarkMode = props.isDarkMode ?? storeIsDarkMode;
+
   return (
     <section 
       aria-labelledby="hero-main-title" 

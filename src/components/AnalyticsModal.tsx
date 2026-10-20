@@ -18,6 +18,8 @@ import type {
   AuthorInsight, 
   Post 
 } from '../types/blog';
+import { useAppStore } from '../store/useAppStore';
+import { selectAllPosts, selectSavedPosts } from '../store/selectors';
 
 const FILTER_OPTIONS: AnalyticsFilter[] = [
   { type: 'all', label: 'All Articles' },
@@ -25,14 +27,21 @@ const FILTER_OPTIONS: AnalyticsFilter[] = [
   { type: 'saved_only', label: 'Saved Articles Only' }
 ];
 
-export default function AnalyticsModal({
-  isOpen,
-  onClose,
-  posts,
-  savedPosts,
-  isDarkMode
-}: AnalyticsModalProps): React.JSX.Element | null {
+export default function AnalyticsModal(props: AnalyticsModalProps): React.JSX.Element | null {
+  const storeIsOpen = useAppStore((state) => state.isAnalyticsOpen);
+  const storeClose = useAppStore((state) => state.closeAnalyticsModal);
+  const storePosts = useAppStore(selectAllPosts);
+  const storeSavedPosts = useAppStore(selectSavedPosts);
+  const storeIsDarkMode = useAppStore((state) => state.isDarkMode);
+
+  const isOpen = props.isOpen !== undefined ? props.isOpen : storeIsOpen;
+  const onClose = props.onClose ?? storeClose;
+  const posts = props.posts ?? storePosts;
+  const savedPosts = props.savedPosts ?? storeSavedPosts;
+  const isDarkMode = props.isDarkMode ?? storeIsDarkMode;
+
   const [activeTab, setActiveTab] = useState<MetricTab>('overview');
+
   const [selectedFilter, setSelectedFilter] = useState<AnalyticsFilter>(FILTER_OPTIONS[0]);
 
   // Determine current active dataset based on discriminated union filter

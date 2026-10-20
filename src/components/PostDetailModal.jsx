@@ -1,44 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { X, MessageSquare, Bookmark, BookmarkCheck, User, Calendar, Pencil, Trash2 } from 'lucide-react';
-import { fetchPostComments } from '../services/api';
+import { usePostCommentsQuery } from '../hooks/useBlogQueries';
+import { useAppStore } from '../store/useAppStore';
+import { selectIsPostSaved } from '../store/selectors';
 
-export default function PostDetailModal({ 
-  post, 
-  onClose, 
-  isSaved, 
-  onToggleSave, 
-  onEditPost, 
-  onDeletePost, 
-  isDarkMode 
-}) {
-  const [comments, setComments] = useState([]);
-  const [loadingComments, setLoadingComments] = useState(true);
+export default function PostDetailModal(props) {
+  const storeSelectedPost = useAppStore((state) => state.selectedPost);
+  const storeClose = useAppStore((state) => state.closeDetailModal);
+  const storeIsDarkMode = useAppStore((state) => state.isDarkMode);
+  const storeToggleSave = useAppStore((state) => state.toggleSavePost);
+  const storeOpenEdit = useAppStore((state) => state.openCreateModal);
+  const storeDeletePost = useAppStore((state) => state.deletePost);
 
-  useEffect(() => {
-    if (!post || post.isCustom) {
-      setLoadingComments(false);
-      setComments([]);
-      return;
-    }
+  const post = props.post ?? storeSelectedPost;
+  const isPostSavedInStore = useAppStore(selectIsPostSaved(post?.id ?? 0));
+  const isSaved = props.isSaved !== undefined ? props.isSaved : isPostSavedInStore;
+  const isDarkMode = props.isDarkMode ?? storeIsDarkMode;
+  const onClose = props.onClose ?? storeClose;
+  const onToggleSave = props.onToggleSave ?? (() => post && storeToggleSave(post.id));
+  const onEditPost = props.onEditPost ?? (() => post && storeOpenEdit(post));
+  const onDeletePost = props.onDeletePost ?? (() => post && storeDeletePost(post.id));
 
-    let isMounted = true;
-    setLoadingComments(true);
+  // TanStack Query for caching post comments with automatic deduplication
+  const {
+    data: fetchedComments = [],
+    isLoading: loadingComments,
+  } = usePostCommentsQuery(post && !post.isCustom ? post.id : null);
 
-    fetchPostComments(post.id)
-      .then((data) => {
-        if (isMounted) {
-          setComments(data);
-          setLoadingComments(false);
-        }
-      })
-      .catch(() => {
-        if (isMounted) setLoadingComments(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [post]);
+  const comments = post?.isCustom ? [] : fetchedComments;
 
   if (!post) return null;
 

@@ -1,17 +1,30 @@
 import React from 'react';
 import { BookOpen, Bookmark, PlusCircle, Search, Sparkles, Moon, Sun, BarChart3 } from 'lucide-react';
+import { useAppStore } from '../store/useAppStore';
+import { selectSavedCount } from '../store/selectors';
 
-export default function Navbar({ 
-  activeTab, 
-  setActiveTab, 
-  searchQuery, 
-  setSearchQuery, 
-  savedCount, 
-  onOpenCreateModal,
-  onOpenAnalytics,
-  isDarkMode,
-  onToggleTheme
-}) {
+export default function Navbar(props) {
+  // Store integration with atomic selectors & prop fallbacks
+  const storeActiveTab = useAppStore((state) => state.activeTab);
+  const storeSetActiveTab = useAppStore((state) => state.setActiveTab);
+  const storeSearchQuery = useAppStore((state) => state.searchQuery);
+  const storeSetSearchQuery = useAppStore((state) => state.setSearchQuery);
+  const storeSavedCount = useAppStore(selectSavedCount);
+  const storeIsDarkMode = useAppStore((state) => state.isDarkMode);
+  const storeToggleTheme = useAppStore((state) => state.toggleTheme);
+  const storeOpenCreateModal = useAppStore((state) => state.openCreateModal);
+  const storeOpenAnalytics = useAppStore((state) => state.openAnalyticsModal);
+
+  const activeTab = props.activeTab ?? storeActiveTab;
+  const setActiveTab = props.setActiveTab ?? storeSetActiveTab;
+  const searchQuery = props.searchQuery ?? storeSearchQuery;
+  const setSearchQuery = props.setSearchQuery ?? storeSetSearchQuery;
+  const savedCount = props.savedCount ?? storeSavedCount;
+  const isDarkMode = props.isDarkMode ?? storeIsDarkMode;
+  const onToggleTheme = props.onToggleTheme ?? storeToggleTheme;
+  const onOpenCreateModal = props.onOpenCreateModal ?? (() => storeOpenCreateModal(null));
+  const onOpenAnalytics = props.onOpenAnalytics ?? storeOpenAnalytics;
+
   return (
     <nav className={`sticky top-0 z-40 transition-all duration-500 ease-in-out ${
       isDarkMode ? 'glass-nav-dark' : 'glass-nav-light'

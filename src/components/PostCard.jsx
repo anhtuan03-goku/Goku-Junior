@@ -1,15 +1,26 @@
 import React from 'react';
 import { Bookmark, BookmarkCheck, Clock, ArrowUpRight, Tag, Pencil, Trash2 } from 'lucide-react';
+import { useAppStore } from '../store/useAppStore';
+import { selectIsPostSaved } from '../store/selectors';
 
-export default function PostCard({ 
-  post, 
-  isSaved, 
-  onToggleSave, 
-  onSelectPost, 
-  onEditPost, 
-  onDeletePost, 
-  isDarkMode 
-}) {
+export default function PostCard(props) {
+  const { post } = props;
+
+  // Atomic selector: only this card re-renders when its saved status changes
+  const isPostSavedInStore = useAppStore(selectIsPostSaved(post.id));
+  const storeIsDarkMode = useAppStore((state) => state.isDarkMode);
+  const storeToggleSave = useAppStore((state) => state.toggleSavePost);
+  const storeOpenDetail = useAppStore((state) => state.openDetailModal);
+  const storeOpenEdit = useAppStore((state) => state.openCreateModal);
+  const storeDeletePost = useAppStore((state) => state.deletePost);
+
+  const isSaved = props.isSaved !== undefined ? props.isSaved : isPostSavedInStore;
+  const isDarkMode = props.isDarkMode ?? storeIsDarkMode;
+  const onToggleSave = props.onToggleSave ?? (() => storeToggleSave(post.id));
+  const onSelectPost = props.onSelectPost ?? (() => storeOpenDetail(post));
+  const onEditPost = props.onEditPost ?? (() => storeOpenEdit(post));
+  const onDeletePost = props.onDeletePost ?? (() => storeDeletePost(post.id));
+
   // Generate avatar color based on userId/postId
   const colors = [
     'from-blue-500 to-indigo-600',
