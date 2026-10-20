@@ -827,6 +827,505 @@ const userMap = useMemo(() => {
 3. **Phân biệt rạch ròi giữa UI Component và Logic Hooks**:
    - Một component sạch sẽ chỉ nên tập trung vào việc mô tả giao diện trông như thế nào dựa trên dữ liệu. Toàn bộ logic phức tạp (gọi storage, debounce, network, timers) cần được gom nhóm vào Custom Hooks riêng biệt.
 
+
+---
+---
+
+# Chương: DEV-FE-008 · State Management, Zustand & Redux Toolkit
+
+Tài liệu thực hành và hoàn thành các bài tập thuộc Chương **DEV-FE-008 · State Management, Zustand & Redux Toolkit** trong dự án PulseBlog.
+
+---
+
+## 📌 1. Bối Cảnh & Kiến Trúc Tổng Thể (Architecture Overview)
+
+Trước đây, PulseBlog quản lý trạng thái tập trung chủ yếu tại component gốc [src/App.jsx](src/App.jsx) với hơn 10 React hooks rời rạc (`useState`, `useLocalStorage`, `useEffect`, `useMemo`), kéo theo hiện tượng **Prop Drilling** khi phải truyền dữ liệu và callbacks qua nhiều tầng con (`Navbar`, `Header`, `PostCard`, các Modal).
+
+Tại chương này, hệ thống được tái cấu trúc chuyển dịch sang mô hình **Centralized State Management** chuẩn công nghiệp:
+- **Thư viện chủ đạo**: [Zustand](https://github.com/pmndrs/zustand) kết hợp **Slice Pattern**, **Selective Persist Middleware**, và **Fine-grained Atomic Selectors**.
+- **Kiến trúc tham chiếu đối sánh**: Triển khai song song module [Redux Toolkit](https://redux-toolkit.js.org/) tương đương 1-1 tại thư mục `src/store/redux/` nhằm phân tích, so sánh chuyên sâu giữa hai trường phái quản lý trạng thái phổ biến nhất hiện nay.
+
+```
+                  ┌────────────────────────────────────────────────────────┐
+                  │                 PulseBlog App Store                    │
+                  │             (Zustand Slice Pattern)                    │
+                  ├──────────────────┬──────────────────┬──────────────────┤
+                  │    postSlice     │     uiSlice      │    themeSlice    │
+                  │  - apiPosts      │  - activeTab     │  - isDarkMode    │
+                  │  - customPosts   │  - searchQuery   │  - toggleTheme() │
+                  │  - savedPostIds  │  - modals open   │  - setTheme()    │
+                  │  - deletedPostIds│  - selectedPost  │                  │
+                  │  - users, loading│                  │                  │
+                  └─────────┬────────┴─────────┬────────┴─────────┬────────┘
+                            │                  │                  │
+                  ┌─────────┴──────────────────┴──────────────────┴────────┐
+                  │          Middleware Layer (Zustand Middleware)         │
+                  │  - devtools: Đăng ký Redux DevTools extension          │
+                  │  - persist: Lưu trữ có chọn lọc (partialize)           │
+                  └────────────────────────────┬───────────────────────────┘
+                                               │
+               ┌───────────────────────────────┴───────────────────────────────┐
+               │                                                               │
+     ┌─────────▼─────────┐                                           ┌─────────▼─────────┐
+     │  Atomic Selectors │                                           │ Memoized Selectors│
+     │  - selectIsPost   │                                           │  - selectAllPosts │
+     │  - selectSavedCnt │                                           │  - selectFiltered │
+     │  - isDarkMode     │                                           │  - selectUserMap  │
+     └─────────┬─────────┘                                           └─────────┬─────────┘
+               │                                                               │
+     ┌─────────▼───────────────────────────────────────────────────────────────▼─────────┐
+     │                             UI Components (Subscribers)                            │
+     │      Navbar   │   Header   │   PostCard   │   DetailModal   │   AnalyticsModal     │
+     └────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📌 2. Tiêu Chí 1: Phân Tách Store Thành Các Module/Slice Hợp Lý (Slice Pattern)
+
+Store được phân rã theo nguyên lý **Separation of Concerns (SoC)** thành 3 slices độc lập đặt trong `src/store/slices/`, sau đó được hợp nhất tại [src/store/useAppStore.ts](src/store/useAppStore.ts):
+
+### 🔷 1. `postSlice` ([src/store/slices/postSlice.ts](src/store/slices/postSlice.ts))
+Quản lý toàn bộ vòng đời của dữ liệu bài viết (Entities & Network State):
+- **Trạng thái**:
+  - `apiPosts: Post[]` — Danh sách bài viết nạp từ máy chủ JSONPlaceholder.
+  - `customPosts: Post[]` — Danh sách bài viết do người dùng tự khởi tạo trong phiên làm việc.
+  - `savedPostIds: number[]` — Danh sách ID các bài viết được đánh dấu lưu (bookmark).
+  - `deletedPostIds: number[]` — Danh sách ID các bài viết đã bị xóa.
+  - `users: User[]` — Danh sách tác giả từ API.
+  - `loading: boolean` & `error: string | null` — Trạng thái gọi mạng bất đồng bộ.
+- **Hành động (Actions)**:
+  - `loadApiData()`: Gọi đồng thời API `fetchPosts` và `fetchUsers` thông qua `Promise.all`.
+  - `createPost(postData)`: Bổ sung bài viết mới vào đầu danh sách với ID sinh tự động `Date.now()`.
+  - `updatePost(updatedPost)`: Cập nhật bài viết bất biến (immutable update).
+  - `deletePost(postId)`: Đưa `postId` vào danh sách bài viết bị ẩn, đồng thời gỡ bỏ khỏi `savedPostIds` và `customPosts`.
+  - `toggleSavePost(postId)`: Thêm hoặc gỡ ID bài viết khỏi danh sách bookmark.
+
+### 🔷 2. `uiSlice` ([src/store/slices/uiSlice.ts](src/store/slices/uiSlice.ts))
+Quản lý các trạng thái giao diện tức thời (Transient UI State):
+- **Trạng thái**:
+  - `activeTab: 'all' | 'saved'` — Tab hiển thị hiện tại.
+  - `searchQuery: string` — Chuỗi tìm kiếm người dùng đang nhập.
+  - `selectedPost: Post | null` — Bài viết đang được mở xem chi tiết trong modal.
+  - `editingPost: Post | null` — Bài viết đang được chọn chỉnh sửa.
+  - `isCreateModalOpen: boolean` — Cờ mở/đóng modal tạo/sửa bài viết.
+  - `isAnalyticsOpen: boolean` — Cờ mở/đóng modal phân tích dữ liệu chuyên sâu.
+- **Hành động (Actions)**:
+  - `setActiveTab`, `setSearchQuery`, `openCreateModal`, `closeCreateModal`, `openDetailModal`, `closeDetailModal`, `openAnalyticsModal`, `closeAnalyticsModal`.
+
+### 🔷 3. `themeSlice` ([src/store/slices/themeSlice.ts](src/store/slices/themeSlice.ts))
+Quản lý chủ đề giao diện ứng dụng:
+- **Trạng thái**: `isDarkMode: boolean` (mặc định khởi tạo từ cấu hình người dùng).
+- **Hành động (Actions)**: `toggleTheme()`, `setTheme(isDark)`.
+
+### 🔷 4. Tích Hợp Root Store ([src/store/useAppStore.ts](src/store/useAppStore.ts))
+```typescript
+export const useAppStore = create<AppStore>()(
+  devtools(
+    persist(
+      (...a) => ({
+        ...createPostSlice(...a),
+        ...createUiSlice(...a),
+        ...createThemeSlice(...a),
+      }),
+      {
+        name: 'pulse_blog_store',
+        partialize: (state) => ({
+          isDarkMode: state.isDarkMode,
+          customPosts: state.customPosts,
+          savedPostIds: state.savedPostIds,
+          deletedPostIds: state.deletedPostIds,
+        }),
+      }
+    ),
+    {
+      name: 'PulseBlogStore',
+      enabled: import.meta.env.DEV,
+    }
+  )
+);
+```
+
+---
+
+## 📌 3. Tiêu Chí 2: State Tối Thiểu Cần Thiết, Không Dữ Liệu Thừa (Normalized State)
+
+Một trong những sai lầm phổ biến nhất trong State Management là lưu trữ dữ liệu trùng lặp hoặc lưu các giá trị có thể tính toán được từ dữ liệu gốc (**Derived State**).
+
+### ❌ Anti-pattern Trước Đây:
+- Lưu trữ toàn bộ object `savedPosts: Post[]` vào state và `localStorage`. Khi một bài viết được sửa tiêu đề hoặc xóa, ứng dụng phải cập nhật thủ công đồng thời ở 3 vị trí khác nhau: `apiPosts`, `customPosts`, và `savedPosts`.
+- Nếu cập nhật sót một vị trí, dữ liệu lập tức bị phân mảnh (Desynchronized State).
+
+### ✅ Giải Pháp Chuẩn Hóa Triển Khai (Single Source of Truth):
+Trong `postSlice`, ứng dụng áp dụng nguyên tắc **Normalized State**:
+1. **Chỉ lưu mảng định danh `savedPostIds: number[]`**:
+   - Khi bài viết được chỉnh sửa, dữ liệu bài viết chỉ cập nhật đúng 1 lần tại nguồn gốc. Toàn bộ danh sách `savedPosts` hiển thị ở UI là kết quả của Selector lọc từ `allPosts` theo `savedPostIds`.
+2. **Không lưu `allPosts` trong State**:
+   - Danh sách bài viết tổng thể là dữ liệu phái sinh được kết hợp từ `apiPosts + customPosts - deletedPostIds`.
+3. **Không lưu `filteredPosts` trong State**:
+   - Kết quả tìm kiếm theo từ khóa và theo Tab ('all' vs 'saved') được tính toán động qua selector `selectFilteredPosts`.
+4. **Không lưu các biến đếm số lượng (`savedCount`, `totalPosts`, `totalUsers`) trong State**:
+   - Toàn bộ được trích xuất tức thời thông qua các selector $O(1)$ như `selectSavedCount` (`savedPostIds.length`).
+
+| Dữ liệu | Vị trí lưu trữ | Phân loại | Lý do |
+| :--- | :--- | :--- | :--- |
+| `apiPosts`, `customPosts` | `postSlice` | **Root State** | Dữ liệu gốc của hệ thống |
+| `savedPostIds` | `postSlice` | **Root State** | Danh sách khóa ngoại liên kết (Foreign Keys) |
+| `deletedPostIds` | `postSlice` | **Root State** | Danh sách loại trừ các bản ghi API bị xóa |
+| `savedPosts` (danh sách object) | Selector (`selectSavedPosts`) | **Derived State** | Tính toán tự động từ `allPosts` và `savedPostIds` |
+| `allPosts` (gộp API + Custom) | Selector (`selectAllPosts`) | **Derived State** | Tránh trùng lặp mảng bài viết trong RAM |
+| `filteredPosts` | Selector (`selectFilteredPosts`) | **Derived State** | Phụ thuộc vào từ khóa tìm kiếm và tab |
+| `savedCount`, `totalPosts` | Selector | **Derived State** | Trích xuất độ dài mảng $O(1)$, không cần lưu thừa |
+
+---
+
+## 📌 4. Tiêu Chí 3: Selector Tối Ưu, Triệt Tiêu Re-render Thừa
+
+### ⚡ Vấn Đề Lớn Của Prop Drilling Trước Khi Có Store:
+- Khi người dùng gõ 1 ký tự vào ô tìm kiếm (`searchQuery`), hook `useState` tại `App.jsx` bị kích hoạt.
+- `App.jsx` re-render kéo theo toàn bộ cây component con bị re-render: `Navbar`, `Header`, và toàn bộ **100+ component `PostCard`**, dù tiêu đề và nội dung bài viết không hề thay đổi.
+
+### 🛡️ Giải Pháp Triệt Tiêu Re-render Với Zustand & Selectors ([src/store/selectors.ts](src/store/selectors.ts)):
+
+#### 1. Atomic Selectors & Factory Selectors Cho Từng Card:
+Thay vì truyền hàm `isPostSaved(post.id)` từ component cha, mỗi component [src/components/PostCard.jsx](src/components/PostCard.jsx) tự đăng ký lắng nghe trạng thái bookmark của riêng mình thông qua Selector Factory:
+```javascript
+// PostCard.jsx
+const isPostSavedInStore = useAppStore(selectIsPostSaved(post.id));
+```
+Bên trong `selectors.ts`:
+```typescript
+export const selectIsPostSaved = (postId: number) => (state: AppStore): boolean => {
+  return state.savedPostIds.includes(postId);
+};
+```
+- **Hiệu quả**: Hàm selector trả về giá trị kiểu nguyên thủy `boolean` (`true` hoặc `false`).
+- Khi người dùng click bookmark tại Bài viết #1, Zustand so sánh bằng toán tử `Object.is`. Trạng thái của Bài viết #1 đổi từ `false` sang `true` $\rightarrow$ **Chỉ duy nhất Bài viết #1 re-render để đổi icon**. Toàn bộ 99 bài viết còn lại có selector trả về `false === false`, hoàn toàn **KHÔNG re-render**!
+
+#### 2. Kỹ Thuật Snapshot Caching Đáp Ứng React 19 `useSyncExternalStore`:
+- *Nguyên tắc cốt lõi*: Trong React 18/19, `useSyncExternalStore` yêu cầu các selector trả về kiểu đối tượng/mảng phải duy trì tính ổn định tham chiếu (**Referential Stability**). Nếu selector trả về một mảng mới `[...filter]` ở mỗi lần gọi mà dữ liệu gốc không đổi, React sẽ phát hiện snapshot thay đổi liên tục và cảnh báo `Error: Maximum update depth exceeded`.
+- *Triển khai*: Trong [src/store/selectors.ts](src/store/selectors.ts), các selector phái sinh phức tạp (`selectAllPosts`, `selectSavedPosts`, `selectFilteredPosts`) đều được trang bị cơ chế **Snapshot Cache**:
+```typescript
+let lastSavedAllPosts: Post[] | null = null;
+let lastSavedIds: number[] | null = null;
+let cachedSavedPosts: Post[] = [];
+
+export const selectSavedPosts = (state: AppStore): Post[] => {
+  const allPosts = selectAllPosts(state);
+  // Nếu dữ liệu phụ thuộc không đổi tham chiếu, trả về mảng cache cũ ngay lập tức
+  if (allPosts === lastSavedAllPosts && state.savedPostIds === lastSavedIds) {
+    return cachedSavedPosts;
+  }
+
+  cachedSavedPosts = allPosts.filter((post) => state.savedPostIds.includes(post.id));
+  lastSavedAllPosts = allPosts;
+  lastSavedIds = state.savedPostIds;
+  return cachedSavedPosts;
+};
+```
+
+#### 3. Cách Ly Hoàn Toàn Hero `Header` Khỏi Ô Tìm Kiếm:
+Component [src/components/Header.jsx](src/components/Header.jsx) chỉ đăng ký:
+```javascript
+const totalPosts = useAppStore(selectTotalPostsCount);
+const savedCount = useAppStore(selectSavedCount);
+const totalUsers = useAppStore(selectTotalUsersCount);
+const isDarkMode = useAppStore((state) => state.isDarkMode);
+```
+- Khi người dùng gõ bàn phím liên tục vào ô tìm kiếm, `searchQuery` trong `uiSlice` thay đổi liên tục.
+- Do `Header` không đăng ký selector tới `searchQuery`, component `Header` **hoàn toàn không re-render một lần nào** trong suốt quá trình người dùng tìm kiếm!
+
+---
+
+## 📌 5. Tiêu Chí 4: Cơ Chế Persist Có Chọn Lọc Cho Dữ Liệu Cần Lưu (Selective Persistence)
+
+### 🎯 Phân Định Trạng Thái Bền Vững (Durable) vs Trạng Thái Tạm Thời (Transient):
+Không phải mọi dữ liệu trong Store đều nên lưu vào Web Storage. Nếu lưu bừa bãi dữ liệu tạm thời (UI modals, loading spinners, lỗi mạng) sẽ khiến trải nghiệm người dùng bị hỏng khi họ tải lại trang hoặc mở ở tab mới.
+
+```
+┌───────────────────────────────────────────────┬───────────────────────────────────────────────┐
+│     Durable State (ĐƯỢC LƯU TRỮ PERSIST)      │   Transient State (TUYỆT ĐỐI KHÔNG PERSIST)   │
+├───────────────────────────────────────────────┼───────────────────────────────────────────────┤
+│ ✔ isDarkMode: Cấu hình giao diện người dùng  │ ✘ loading, error: Trạng thái mạng tạm thời    │
+│ ✔ customPosts: Các bài viết do user tự viết   │ ✘ apiPosts: Cần fetch mới nhất từ máy chủ     │
+│ ✔ savedPostIds: Danh sách ID bài viết đã lưu  │ ✘ searchQuery: Ô tìm kiếm cần reset khi reload│
+│ ✔ deletedPostIds: Danh sách bài viết bị xóa   │ ✘ isCreateModalOpen, isAnalyticsOpen: Modals  │
+│                                               │ ✘ selectedPost: Chi tiết bài viết đang xem    │
+└───────────────────────────────────────────────┴───────────────────────────────────────────────┘
+```
+
+### ⚙️ Triển Khai Qua Middleware `partialize`:
+```typescript
+persist(
+  (...a) => ({ ... }),
+  {
+    name: 'pulse_blog_store', // Key định danh duy nhất trong window.localStorage
+    partialize: (state) => ({
+      isDarkMode: state.isDarkMode,
+      customPosts: state.customPosts,
+      savedPostIds: state.savedPostIds,
+      deletedPostIds: state.deletedPostIds,
+    }),
+  }
+)
+```
+
+### 🔄 Cơ Chế Chuyển Đổi Tương Thích Dữ Liệu Cũ (Backward Compatibility Migration):
+Trong [src/store/slices/postSlice.ts](src/store/slices/postSlice.ts), hàm `getLegacyInitialData()` tự động kiểm tra và di chuyển dữ liệu cũ từ các key `pulse_blog_saved_posts`, `pulse_blog_custom_posts`, `pulse_blog_deleted_posts` sang cấu trúc mới của Zustand Store, đảm bảo người dùng không bị mất bất kỳ bài viết hay bookmark nào từ các phiên bản trước.
+
+---
+
+## 📌 6. Tiêu Chí 5: So Sánh Toàn Diện & Lý Do Lựa Chọn Giữa Zustand và Redux Toolkit Cho PulseBlog
+
+Trong chương này, mã nguồn tham chiếu tương đương của Redux Toolkit cũng được xây dựng đầy đủ tại thư mục `src/store/redux/` (`postSlice.ts`, `uiSlice.ts`, `themeSlice.ts`, `store.ts`, `selectors.ts` với `createSelector`). Dưới đây là phân tích kiến trúc chuyên sâu:
+
+### 📊 Bảng So Sánh Kỹ Thuật: Zustand vs Redux Toolkit (RTK)
+
+| Tiêu chí | Zustand (Lựa chọn chính) | Redux Toolkit (Mô hình so sánh) |
+| :--- | :--- | :--- |
+| **Kích thước Bundle (Minified + Gzip)** | **~1.1 kB** (Siêu nhẹ, zero dependency) | **~12 – 14 kB** (Bao gồm RTK + React-Redux + Immer + Reselect) |
+| **Boilerplate & Ceremony** | **Rất thấp**: Khởi tạo hook trực tiếp, cập nhật trực tiếp qua `set()`. | **Trung bình - Cao**: Cần `createSlice`, `configureStore`, `<Provider>`, `useDispatch`, `useSelector`. |
+| **Yêu cầu Context Provider** | **Không cần**: Store nằm ngoài cây React component, có thể gọi trực tiếp ở bất kỳ tệp JS/TS nào (`useAppStore.getState()`). | **Bắt buộc**: Phải bọc toàn bộ ứng dụng trong `<Provider store={store}>`. |
+| **Cơ Chế Re-render** | Tối ưu tức thì thông qua Fine-grained Atomic Selectors và `useShallow`. | Cần sử dụng `createSelector` (Reselect) hoặc truyền hàm `equalityFn` tùy chỉnh vào `useSelector`. |
+| **Cơ Chế Persistence** | Tích hợp sẵn middleware `persist` chính thống, lọc trường qua `partialize`. | Cần cài thêm thư viện bên thứ ba `redux-persist` (khá nặng, hay gặp lỗi serialization warnings). |
+| **Mô Hình Bất Đồng Bộ (Async Actions)** | Gọi hàm async tự nhiên bên trong slice (`async () => { set(...) }`). | Cần `createAsyncThunk` hoặc cấu hình RTK Query với cú pháp `extraReducers`. |
+| **DevTools & Time-travel** | Hỗ trợ Redux DevTools extension thông qua middleware `devtools`. | Tích hợp sẵn Redux DevTools gốc với khả năng Time-travel debugging mạnh mẽ. |
+| **Tương thích React 19 & Concurrent Mode** | Tương thích 100% thông qua `useSyncExternalStore`. | Tương thích 100% thông qua `react-redux` v9+ (`useSyncExternalStore`). |
+| **Độ dốc học tập (Learning Curve)** | Dễ tiếp cận trong vòng 15 phút cho mọi trình độ Frontend. | Cần nắm vững tư duy luồng dữ liệu 1 chiều (Flux), Action, Reducer, Dispatcher, Middleware. |
+
+### 🏆 Luận Điểm Lựa Chọn Zustand Làm Store Chính Cho PulseBlog:
+
+1. **Hiệu Quả Về Tài Nguyên & Bundle Size**:
+   - PulseBlog là một ứng dụng đọc báo, tin tức và phân tích tri thức hiện đại. Việc tiết kiệm hơn 10 kB bundle size giúp website khởi động và tương tác tức thì (FCP & TTI tối ưu), đặc biệt trên các thiết bị di động có băng thông hạn chế.
+2. **Loại Bỏ Hoàn Toàn Provider Hell & Prop Drilling**:
+   - Với Zustand, component con có thể truy xuất trực tiếp trạng thái mà không cần bọc `<Provider>` ở cấp cao nhất. Việc tích hợp, kiểm thử (unit testing) các component riêng lẻ trở nên độc lập và đơn giản hơn rất nhiều.
+3. **Cơ Chế Persist Tinh Gọn**:
+   - Middleware `persist` của Zustand giải quyết bài toán lưu trữ trạng thái có chọn lọc (`partialize`) một cách tự nhiên chỉ trong 5 dòng code, không làm phát sinh cảnh báo non-serializable value như khi dùng `redux-persist`.
+4. **Hỗ Trợ Module Hóa Slices Hoàn Hảo**:
+   - Mặc dù nhẹ, Zustand vẫn cung cấp đầy đủ khả năng phân tách module thông qua Slice Pattern, đáp ứng chuẩn mực kiến trúc sạch (Clean Architecture) không hề thua kém Redux Toolkit.
+
+### 🏢 Khi Nào Một Dự Án Enterprise Nên Chọn Redux Toolkit?
+
+Redux Toolkit vẫn là sự lựa chọn số 1 trong các kịch bản sau:
+1. **Dự án quy mô cực lớn với hàng chục team cùng làm việc (Multi-team Enterprise)**:
+   - Kiến trúc nghiêm ngặt của Redux (mọi biến động trạng thái đều phải thông qua Action Type cụ thể) giúp việc kiểm soát, phân định trách nhiệm code và audit log hệ thống trở nên minh bạch tuyệt đối.
+2. **Yêu cầu Time-travel Debugging và Replay Bugs khắt khe**:
+   - Redux DevTools với khả năng xuất/nhập toàn bộ lịch sử Action dưới dạng tệp JSON giúp đội ngũ QA và DevOps tái hiện chính xác 100% chuỗi thao tác dẫn tới lỗi của người dùng.
+3. **Tận Dụng Sức Mạnh Của RTK Query**:
+   - Khi ứng dụng có hàng trăm API REST hoặc GraphQL phức tạp cần cơ chế tự động caching, deduplication, polling và optimistic updates, RTK Query là một giải pháp toàn diện vượt trội.
+
+
+---
+---
+
+# Chương: DEV-FE-009 · Fetching với TanStack Query
+
+Tài liệu thực hành và hoàn thành các bài tập thuộc Chương **DEV-FE-009 · Fetching với TanStack Query** trong dự án PulseBlog.
+
+---
+
+## 📌 1. Bối Cảnh & Kiến Trúc Phân Định Server State vs Client State
+
+Trước phiên bản này, toàn bộ việc gọi API được kích hoạt thủ công qua hook `useEffect` trong component hoặc hàm action của Zustand. Cách tiếp cận này bộc lộ các nhược điểm cố hữu của việc tự quản lý Server State:
+- Thiếu cơ chế Caching tự động: Mỗi lần người dùng đổi trang hoặc quay lại tab cũ, hệ thống lại phải gửi lại request HTTP.
+- Khó khăn trong việc khử trùng lặp (Deduplication) khi nhiều component cùng cần một nguồn dữ liệu.
+- Xử lý phức tạp cho các tác vụ đột biến dữ liệu (Mutations) và đồng bộ trạng thái (Cache Invalidation).
+
+Tại chương này, PulseBlog áp dụng mô hình phân tách trạng thái hiện đại chuẩn công nghiệp:
+- **Server State (Dữ liệu máy chủ)**: Được quản lý tập trung bởi **TanStack Query v5** ([@tanstack/react-query](https://tanstack.com/query/latest)), chịu trách nhiệm fetching, caching, deduplication, pagination, và mutations.
+- **Client State (Trạng thái giao diện)**: Được quản lý bởi **Zustand Store**, chịu trách nhiệm lưu trữ theme Dark/Light mode, bookmarks (`savedPostIds`), từ khóa tìm kiếm và trạng thái đóng/mở modals.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   PulseBlog Application                                │
+└───────────────────┬────────────────────────────────────────────────┬───────────────────┘
+                    │                                                │
+         ┌──────────▼──────────┐                          ┌──────────▼──────────┐
+         │     Server State    │                          │     Client State    │
+         │   (TanStack Query)  │                          │    (Zustand Store)  │
+         ├─────────────────────┤                          ├─────────────────────┤
+         │ • usePostsPagedQuery│                          │ • isDarkMode        │
+         │ • useAllPostsQuery  │                          │ • savedPostIds      │
+         │ • useUsersQuery     │                          │ • searchQuery       │
+         │ • usePostComments   │                          │ • customPosts       │
+         │ • useMutations      │                          │ • modals open/close │
+         └──────────┬──────────┘                          └──────────┬──────────┘
+                    │                                                │
+                    │ ┌────────────────────────────────────────────┐ │
+                    └─►          App Component / PostCard          ◄─┘
+                      │  - Kết hợp dữ liệu phân trang & tác giả    │
+                      │  - Bookmark & hiển thị trạng thái bài viết │
+                      └────────────────────────────────────────────┘
+```
+
+---
+
+## 📌 2. Tiêu Chí 1: Danh Sách Dùng `useQuery`, Xử Lý Loading & Error Rõ Ràng
+
+Toàn bộ các tác vụ truy xuất dữ liệu từ máy chủ JSONPlaceholder được đóng gói vào các Custom Hooks tại [src/hooks/useBlogQueries.ts](src/hooks/useBlogQueries.ts):
+
+### 🔷 1. Triển Khai Hook Truy Vấn Phân Trang ([src/hooks/useBlogQueries.ts](src/hooks/useBlogQueries.ts)):
+```typescript
+export function usePostsPagedQuery(page = 1, limit = 9) {
+  return useQuery({
+    queryKey: queryKeys.posts.list(page, limit),
+    queryFn: () => fetchPostsPaged(page, limit),
+    placeholderData: keepPreviousData, // Giữ nguyên dữ liệu trang cũ khi tải trang mới
+  });
+}
+```
+
+### 🔷 2. Giao Diện Xử Lý Trạng Thái Toàn Diện Trong [src/App.jsx](src/App.jsx):
+1. **Trạng Thái Đang Tải (Loading State — `isPagedLoading`)**:
+   - Khi truy cập lần đầu hoặc cache chưa có dữ liệu, hiển thị khối thông báo Animated Glassmorphism với spinner quay mượt mà:
+   ```jsx
+   {isPagedLoading && (
+     <div className="flex flex-col items-center justify-center py-20">
+       <Loader2 className="w-10 h-10 text-indigo-600 dark:text-indigo-400 animate-spin mb-4" />
+       <p className="text-sm font-semibold text-slate-400">
+         Fetching articles via TanStack Query...
+       </p>
+     </div>
+   )}
+   ```
+2. **Trạng Thái Lỗi Kết Nối (Error State — `isPagedError`)**:
+   - Nếu máy chủ gặp sự cố hoặc ngắt kết nối mạng, TanStack Query tự động retry 1 lần trước khi chuyển sang trạng thái lỗi.
+   - Giao diện hiển thị cảnh báo đỏ với nút **"Retry Query"** gọi trực tiếp phương thức `refetchPaged()` để phục hồi:
+   ```jsx
+   {isPagedError && !isPagedLoading && (
+     <div className="flex flex-col items-center justify-center py-16 p-6 rounded-2xl text-center max-w-md mx-auto glass-card-dark">
+       <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
+       <h3 className="text-lg font-bold text-white mb-2">TanStack Query Error</h3>
+       <p className="text-sm text-slate-400 mb-6">{pagedError?.message}</p>
+       <button onClick={() => refetchPaged()} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 rounded-xl text-white font-semibold">
+         <RefreshCw className="w-4 h-4" /> Retry Query
+       </button>
+     </div>
+   )}
+   ```
+3. **Trạng Thái Đồng Bộ Ngầm (Background Fetching / Revalidating — `isPagedFetching`)**:
+   - Hiển thị badge trạng thái `⚡ TanStack Cache: 5m` cùng biểu tượng đồng bộ `Syncing...` nhấp nháy êm dịu, thông báo cho người dùng biết dữ liệu đang được xác thực ngầm mà không gây chặn giao diện.
+
+---
+
+## 📌 3. Tiêu Chí 2: Chuyển Trang / Quay Lại Không Load Lại (Cơ Chế Caching)
+
+### ⚙️ Cấu Hình Cache Chiến Lược ([src/lib/queryClient.ts](src/lib/queryClient.ts)):
+```typescript
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,  // 5 phút: Dữ liệu được xem là tươi mới tuyệt đối
+      gcTime: 1000 * 60 * 30,    // 30 phút: Lưu trữ dữ liệu không hoạt động trong RAM
+      refetchOnWindowFocus: false, // Không bắn request dư thừa khi click chuyển cửa sổ
+      retry: 1,                  // Tự động thử lại 1 lần nếu gặp lỗi mạng
+    },
+  },
+});
+```
+
+### 🚀 Trải Nghiệm Tốc Độ Vượt Trội (0ms Cache Hit):
+1. **Chuyển qua lại giữa các trang phân trang**:
+   - Khi người dùng ở **Trang 1** $\rightarrow$ bấm sang **Trang 2** $\rightarrow$ rồi bấm quay lại **Trang 1**:
+   - TanStack Query nhận diện queryKey `['posts', 'paged', { page: 1, limit: 9 }]` vẫn còn trong thời hạn `staleTime` (5 phút).
+   - **Kết quả**: Dữ liệu Trang 1 xuất hiện **ngay lập tức trong 0 mili-giây** từ bộ nhớ RAM Cache! Hoàn toàn không phát sinh bất kỳ spinner xoay hay thời gian chờ đợi nào.
+2. **Bộ Nhớ Tạm Cho Bình Luận Bài Viết ([src/components/PostDetailModal.jsx](src/components/PostDetailModal.jsx))**:
+   - Thay vì mỗi lần mở modal lại gọi API bình luận, hook `usePostCommentsQuery(post.id)` tự động cache bình luận theo từng `postId`. Người dùng mở lại bài viết đã xem trước đó sẽ thấy bình luận hiện ra tức thì.
+
+---
+
+## 📌 4. Tiêu Chí 3: Thêm / Sửa / Xóa Bằng `useMutation` + `invalidateQueries`
+
+Mọi thao tác thay đổi dữ liệu (CUD) đều được chuyển hóa thành các TanStack Mutation kết hợp làm tươi Cache tự động:
+
+```
+    User bấm "Publish" / "Delete"
+                 │
+                 ▼
+    ┌─────────────────────────┐
+    │     useMutation()       │
+    │  - createPostMutation   │
+    │  - updatePostMutation   │
+    │  - deletePostMutation   │
+    └────────────┬────────────┘
+                 │
+                 ├──► 1. Gọi API bất đồng bộ (POST / PUT / DELETE)
+                 │
+                 └──► 2. onSuccess: queryClient.invalidateQueries({ queryKey: ['posts'] })
+                                      │
+                                      ▼
+                        Đánh dấu toàn bộ cache 'posts' là Stale
+                        Kích hoạt Refetch ngầm lấy danh sách mới nhất!
+```
+
+### 🔷 1. Triển Khai Mutations ([src/hooks/useBlogQueries.ts](src/hooks/useBlogQueries.ts)):
+```typescript
+export function useCreatePostMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (newPost: Omit<Post, 'id'>) => createPostApi(newPost),
+    onSuccess: () => {
+      // Invalidate toàn bộ cache liên quan đến danh sách bài viết
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+    },
+  });
+}
+
+export function useDeletePostMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: number) => deletePostApi(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+    },
+  });
+}
+```
+
+### 🔷 2. Trải Nghiệm Phản Hồi Ngay Lập Tức (Optimistic Integration):
+- Khi người dùng tạo hoặc xóa bài viết trong [src/App.jsx](src/App.jsx), hệ thống cập nhật tức thời vào Zustand Client State để giao diện phản hồi trong 1 frame hình (60fps), đồng thời mutation chạy ngầm gửi request tới máy chủ và kích hoạt `invalidateQueries` để đảm bảo tính toàn vẹn dữ liệu.
+
+---
+
+## 📌 5. Tiêu Chí 4: Phân Trang Mượt Mà Với `placeholderData: keepPreviousData`
+
+### 🎨 Component Phân Trang Chuyên Nghiệp ([src/components/Pagination.jsx](src/components/Pagination.jsx)):
+- Hỗ trợ đầy đủ: Nút **Prev**, danh sách số trang `[1, 2, 3, 4 ... 11]`, dấu rút gọn thông minh `...`, nút **Next**, và thông số chi tiết *"Showing 1 - 9 of 100 articles"*.
+- Hiển thị hiệu ứng xoay icon và gradient sắc nét cho trang đang hoạt động.
+
+### 🛡️ Kỹ Thuật Triệt Tiêu Hoàn Toàn Hiện Tượng Nhấp Nháy (Zero Layout Shift):
+- *Vấn đề khi phân trang thông thường*: Khi người dùng bấm sang trang tiếp theo, component thường chuyển sang trạng thái `isLoading = true`, khiến danh sách bài viết bị xóa khỏi DOM và hiển thị spinner, gây giật giao diện (Layout Shift).
+- *Giải pháp TanStack Query v5*: Cấu hình `placeholderData: keepPreviousData` trong `usePostsPagedQuery`:
+  - Trong lúc dữ liệu của trang tiếp theo đang được tải về qua mạng, dữ liệu của trang hiện tại **vẫn được giữ nguyên vẹn trên màn hình**.
+  - Ngay khi dữ liệu trang mới tải xong, TanStack Query hoán đổi mượt mà sang dữ liệu mới mà không có 1 mili-giây nhấp nháy nào!
+  - Kết hợp hàm cuộn mượt `window.scrollTo({ top: 380, behavior: 'smooth' })` mang lại cảm giác lướt web vô cùng tự nhiên.
+
+---
+
+## 📌 6. Tiêu Chí 5: Network & DevTools: Triệt Tiêu Request Trùng Lặp (Deduplication)
+
+### 🛠️ Tích Hợp ReactQueryDevtools ([src/main.jsx](src/main.jsx)):
+```jsx
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+      {/* DevTools tích hợp góc phải dưới màn hình */}
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+    </QueryClientProvider>
+  </StrictMode>
+);
+```
+- Cho phép lập trình viên trực tiếp theo dõi số lượng query đang ở trạng thái `fresh`, `fetching`, `stale`, hay `inactive`.
+- Hỗ trợ kích hoạt thủ công các nút `Refetch`, `Invalidate`, `Reset` ngay trên giao diện nổi.
+
+### ⚡ Cơ Chế Khử Trùng Lặp Request (Query Deduplication):
+1. **Chia sẻ Query giữa các Component độc lập**:
+   - Khi cả `Header`, `PostCard`, và `AnalyticsModal` đều cần dữ liệu tác giả `users`, cả 3 nơi cùng gọi `useUsersQuery()`.
+   - TanStack Query tự động phát hiện cùng queryKey `['users']` đang trong quá trình thực thi và **chỉ phát đi đúng 1 request HTTP duy nhất** trên Network tab. Toàn bộ các component còn lại sẽ cùng chia sẻ kết quả trả về từ request duy nhất đó.
+2. **Khóa Request Khi Chuyển Cửa Sổ (`refetchOnWindowFocus: false`)**:
+   - Mặc định TanStack Query sẽ refetch khi người dùng Alt+Tab quay lại trình duyệt. Bằng cách thiết lập `refetchOnWindowFocus: false`, ứng dụng tiết kiệm 100% các request thừa không cần thiết, giảm tải áp lực cho máy chủ và tiết kiệm pin cho thiết bị di động.
+
 ---
 
 ## 🛠️ Hướng Dẫn Chạy Môi Trường Cục Bộ
